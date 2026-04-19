@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin · Michaels Floristenwerkstatt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0f1512;--s:#141c18;--s1:#192019;--card:#1a2320;--card2:#1e2a26;
+      --gold:#c9a352;--gold2:#dbb96a;--gdim:rgba(201,163,82,0.1);
+      --line:rgba(201,163,82,0.1);--cream:#ede7d8;--muted:rgba(237,231,216,0.38);
+      --ok:#4aba7a;--warn:#d4943a;--err:#d45a5a;--info:#5a9fd4;
+    }
+    html,body{height:100%;font-size:14px}
+    body{background:var(--bg);color:var(--cream);font-family:'Inter',sans-serif;overflow:hidden}
+    ::-webkit-scrollbar{width:3px;height:3px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:rgba(201,163,82,0.25);border-radius:2px}
+
+    /* ── LOGIN ── */
+    #login{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;align-items:center;justify-content:center}
+    .lw{width:100%;max-width:380px;padding:0 24px;animation:fadeUp 0.5s ease}
+    .lw .logo{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold);margin-bottom:4px}
+    .lw .sub{font-size:0.7rem;color:var(--muted);margin-bottom:40px}
+    .lf{margin-bottom:18px}
+    .lf label{display:block;font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+    .lf input{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(201,163,82,0.2);padding:9px 0;color:var(--cream);font-family:'Inter',sans-serif;font-size:0.88rem;outline:none;transition:border-color 0.2s}
+    .lf input:focus{border-color:var(--gold)}
+    .l-btn{width:100%;background:var(--gold);color:var(--bg);border:none;padding:13px;font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;margin-top:10px;transition:background 0.2s}
+    .l-btn:hover{background:var(--gold2)}
+    .l-err{color:var(--err);font-size:0.73rem;margin-top:10px;display:none;text-align:center}
+
+    /* ── LAYOUT ── */
+    #app{display:none;height:100vh}
+    .layout{display:flex;height:100vh}
+
+    /* ── SIDEBAR ── */
+    .sb{width:220px;min-width:220px;background:var(--s);border-right:1px solid var(--line);display:flex;flex-direction:column}
+    .sb-logo{padding:26px 22px;border-bottom:1px solid var(--line)}
+    .sb-logo .br{font-family:'Playfair Display',serif;font-size:0.92rem;color:var(--gold)}
+    .sb-logo .su{font-size:0.6rem;color:var(--muted);margin-top:2px}
+    .sb-nav{flex:1;padding:14px 0;overflow-y:auto}
+    .sb-sec{font-size:0.53rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);padding:14px 22px 7px;opacity:0.5}
+    .sb-item{display:flex;align-items:center;gap:9px;padding:10px 22px;cursor:pointer;font-size:0.78rem;color:var(--cream);opacity:0.45;border-left:2px solid transparent;transition:opacity 0.2s,background 0.2s,border-color 0.2s;user-select:none}
+    .sb-item:hover{opacity:0.75;background:rgba(201,163,82,0.04)}
+    .sb-item.active{opacity:1;border-left-color:var(--gold);background:rgba(201,163,82,0.07);color:var(--gold)}
+    .sb-ic{font-size:0.9rem;width:16px;text-align:center}
+    .sb-badge{margin-left:auto;background:var(--gold);color:var(--bg);font-size:0.58rem;font-weight:700;padding:1px 6px;border-radius:10px;min-width:16px;text-align:center}
+    .sb-alert-badge{margin-left:auto;background:var(--err);color:#fff;font-size:0.58rem;font-weight:700;padding:1px 6px;border-radius:10px}
+    .sb-foot{padding:18px 22px;border-top:1px solid var(--line)}
+    .role-row{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+    .role-dot{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+    .role-txt{font-size:0.68rem;color:var(--cream);opacity:0.55}
+    .role-txt b{color:var(--gold);font-weight:500}
+    .logout{display:flex;align-items:center;gap:8px;background:none;border:none;font-family:'Inter',sans-serif;font-size:0.7rem;color:var(--muted);cursor:pointer;transition:color 0.2s;padding:0}
+    .logout:hover{color:var(--err)}
+
+    /* ── MAIN ── */
+    .main{flex:1;overflow-y:auto;background:var(--bg)}
+    .page{display:none;padding:38px 42px;animation:fadeUp 0.3s ease}
+    .page.active{display:block}
+    .ph{margin-bottom:32px}
+    .ph h1{font-family:'Playfair Display',serif;font-size:1.75rem;margin-bottom:3px}
+    .ph p{font-size:0.76rem;color:var(--muted)}
+
+    /* ── RLS BAR ── */
+    .rls{display:flex;align-items:center;gap:10px;margin-bottom:24px;padding:11px 14px;background:rgba(201,163,82,0.05);border:1px solid rgba(201,163,82,0.14);border-radius:2px}
+    .rls p{font-size:0.7rem;color:var(--cream);opacity:0.65;flex:1}
+    .rls-role{font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(201,163,82,0.28);padding:3px 9px}
+
+    /* ── METRIC CARDS ── */
+    .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+    .mc{background:var(--card);border:1px solid var(--line);padding:20px;transition:border-color 0.2s,transform 0.2s}
+    .mc:hover{border-color:rgba(201,163,82,0.28);transform:translateY(-2px)}
+    .mc-lbl{font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+    .mc-val{font-family:'Playfair Display',serif;font-size:1.8rem;color:var(--gold);line-height:1}
+    .mc-sub{font-size:0.68rem;color:var(--muted);margin-top:5px}
+
+    /* ── CARD ── */
+    .card{background:var(--card);border:1px solid var(--line);margin-bottom:18px}
+    .card-h{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .card-title{font-size:0.8rem;font-weight:500}
+    .chip{font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;padding:3px 9px;border-radius:2px}
+    .ch-gold{background:var(--gdim);color:var(--gold);border:1px solid rgba(201,163,82,0.2)}
+    .ch-ok{background:rgba(74,186,122,0.1);color:var(--ok);border:1px solid rgba(74,186,122,0.2)}
+    .ch-err{background:rgba(212,90,90,0.1);color:var(--err);border:1px solid rgba(212,90,90,0.2)}
+    .ch-warn{background:rgba(212,148,58,0.1);color:var(--warn);border:1px solid rgba(212,148,58,0.2)}
+    .ch-info{background:rgba(90,159,212,0.1);color:var(--info);border:1px solid rgba(90,159,212,0.2)}
+    .ch-muted{background:rgba(237,231,216,0.05);color:var(--muted);border:1px solid rgba(237,231,216,0.1)}
+
+    /* ── TABLE ── */
+    .tw{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;min-width:600px}
+    thead th{padding:9px 16px;text-align:left;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-weight:500;border-bottom:1px solid var(--line)}
+    tbody tr{border-bottom:1px solid rgba(201,163,82,0.04);transition:background 0.15s}
+    tbody tr:last-child{border-bottom:none}
+    tbody tr:hover{background:rgba(201,163,82,0.03)}
+    td{padding:13px 16px;font-size:0.78rem;vertical-align:middle}
+    td.dim{opacity:0.35;font-size:0.7rem}
+    .row-locked{opacity:0.4}
+    .ra{display:flex;align-items:center;gap:5px;justify-content:flex-end}
+    .ab{font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;padding:5px 11px;border-radius:2px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;border:1px solid transparent;white-space:nowrap;transition:all 0.15s}
+    .ap{background:var(--gold);color:var(--bg);border-color:var(--gold)}.ap:hover{background:var(--gold2)}
+    .ag{background:transparent;color:var(--cream);border-color:rgba(237,231,216,0.15)}.ag:hover{border-color:rgba(237,231,216,0.4);background:rgba(237,231,216,0.05)}
+    .ad{background:transparent;color:var(--err);border-color:rgba(212,90,90,0.28)}.ad:hover{background:rgba(212,90,90,0.08);border-color:var(--err)}
+    .lk{font-size:0.7rem;opacity:0.28;cursor:not-allowed}
+
+    /* ── EMPTY ── */
+    .empty{padding:64px 36px;text-align:center}
+    .empty .ei{font-size:2.6rem;margin-bottom:16px;opacity:0.38}
+    .empty h3{font-family:'Playfair Display',serif;font-size:1.15rem;margin-bottom:7px;opacity:0.55}
+    .empty p{font-size:0.76rem;color:var(--muted);max-width:280px;margin:0 auto 20px;line-height:1.7}
+
+    /* ── CALENDAR ── */
+    .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .cal-nav h2{font-family:'Playfair Display',serif;font-size:1.3rem}
+    .cal-nav-btns{display:flex;gap:8px}
+    .cal-nav-btn{width:36px;height:36px;border:1px solid var(--line);background:transparent;color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s}
+    .cal-nav-btn:hover{background:rgba(201,163,82,0.08)}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+    .cal-dow{text-align:center;font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:6px 0}
+    .cal-day{background:var(--card);border:1px solid var(--line);min-height:80px;padding:8px;cursor:pointer;transition:border-color 0.2s,background 0.2s;position:relative}
+    .cal-day:hover{border-color:rgba(201,163,82,0.3);background:rgba(201,163,82,0.04)}
+    .cal-day.today{border-color:var(--gold)}
+    .cal-day.empty-day{background:transparent;border-color:transparent;cursor:default}
+    .cal-day.empty-day:hover{background:transparent}
+    .cal-day-num{font-size:0.72rem;color:var(--muted);margin-bottom:4px}
+    .cal-day.today .cal-day-num{color:var(--gold);font-weight:600}
+    .cal-order-dot{display:block;font-size:0.6rem;background:rgba(201,163,82,0.15);border:1px solid rgba(201,163,82,0.25);color:var(--gold);padding:2px 6px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .cal-legend{display:flex;align-items:center;gap:6px;margin-top:12px;font-size:0.65rem;color:var(--muted)}
+    .cal-legend span{width:10px;height:10px;background:var(--gold);opacity:0.3;border:1px solid rgba(201,163,82,0.4)}
+
+    /* ── CUSTOMERS ── */
+    .search-input{width:100%;background:var(--card2);border:1px solid var(--line);padding:10px 14px;color:var(--cream);font-family:'Inter',sans-serif;font-size:0.82rem;outline:none;margin-bottom:16px;transition:border-color 0.2s}
+    .search-input:focus{border-color:var(--gold)}
+    .cust-card{background:var(--card);border:1px solid var(--line);padding:16px 20px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;transition:border-color 0.2s}
+    .cust-card:hover{border-color:rgba(201,163,82,0.25)}
+    .cust-av{width:38px;height:38px;border-radius:50%;background:var(--gdim);border:1px solid rgba(201,163,82,0.2);display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:600;color:var(--gold);flex-shrink:0}
+    .cust-info{flex:1;padding:0 16px}
+    .cust-name{font-size:0.85rem;font-weight:500}
+    .cust-meta{font-size:0.68rem;color:var(--muted);margin-top:3px}
+    .cust-stats{display:flex;gap:20px;text-align:right}
+    .cust-stat-num{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold)}
+    .cust-stat-lbl{font-size:0.6rem;color:var(--muted)}
+
+    /* ── INVENTORY ── */
+    .alert-banner{background:rgba(212,90,90,0.08);border:1px solid rgba(212,90,90,0.25);padding:12px 16px;margin-bottom:18px;display:flex;align-items:center;gap:10px;font-size:0.76rem}
+    .inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px;padding:14px}
+    .inv-card{background:var(--card2);border:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:10px;transition:border-color 0.2s}
+    .inv-card:hover{border-color:rgba(201,163,82,0.25)}
+    .inv-card.out{opacity:0.4}
+    .inv-card.low-alert{border-color:rgba(212,90,90,0.4)}
+    .inv-top{display:flex;align-items:center;gap:10px}
+    .inv-em{font-size:1.35rem}
+    .inv-name{font-size:0.8rem;font-weight:500}
+    .inv-note{font-size:0.7rem;background:transparent;border:none;border-bottom:1px solid var(--line);color:var(--muted);font-family:'Inter',sans-serif;outline:none;width:100%;padding:3px 0;transition:border-color 0.2s}
+    .inv-note:focus{border-color:var(--gold);color:var(--cream)}
+    .inv-note::placeholder{color:rgba(237,231,216,0.18)}
+    .inv-foot{display:flex;align-items:center;justify-content:space-between}
+    .inv-st{font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase}
+    .tgl{position:relative;width:36px;height:20px;cursor:pointer}
+    .tgl input{opacity:0;width:0;height:0}
+    .tgl-sl{position:absolute;inset:0;border-radius:100px;background:rgba(237,231,216,0.1);transition:background 0.2s}
+    .tgl-sl::before{content:'';position:absolute;width:14px;height:14px;border-radius:50%;left:3px;top:3px;background:var(--muted);transition:transform 0.2s,background 0.2s}
+    .tgl input:checked+.tgl-sl{background:var(--gold)}
+    .tgl input:checked+.tgl-sl::before{transform:translateX(16px);background:var(--bg)}
+
+    /* ── MODAL ── */
+    .mb{position:fixed;inset:0;z-index:600;background:rgba(15,21,18,0.88);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s;padding:18px}
+    .mb.open{opacity:1;pointer-events:all}
+    .mbox{background:var(--s1);border:1px solid var(--line);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding:34px;transform:translateY(18px) scale(0.98);opacity:0;transition:transform 0.35s cubic-bezier(0.34,1.4,0.64,1),opacity 0.3s}
+    .mb.open .mbox{transform:none;opacity:1}
+    .mbox h3{font-family:'Playfair Display',serif;font-size:1.25rem;margin-bottom:26px}
+    .mx{float:right;background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;transition:color 0.2s;margin-top:-3px}
+    .mx:hover{color:var(--cream)}
+    .mf{margin-bottom:18px}
+    .mf label{display:block;font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+    .mf input,.mf select,.mf textarea{width:100%;background:transparent;border:none;border-bottom:1px solid var(--line);padding:8px 0;color:var(--cream);font-family:'Inter',sans-serif;font-size:0.84rem;outline:none;transition:border-color 0.2s;appearance:none}
+    .mf input:focus,.mf select:focus,.mf textarea:focus{border-color:var(--gold)}
+    .mf select option{background:var(--s)}
+    .mf textarea{resize:none;height:66px}
+    .mr{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .ms{background:var(--gold);color:var(--bg);border:none;padding:11px 26px;font-family:'Inter',sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:background 0.2s;margin-top:6px}
+    .ms:hover{background:var(--gold2)}
+    .detail-f{margin-bottom:16px}
+    .detail-f .dl{font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+    .detail-f .dv{font-size:0.86rem;line-height:1.6}
+
+    /* ── TOAST ── */
+    #toast{position:fixed;bottom:24px;right:24px;z-index:999;background:var(--card2);border:1px solid var(--line);padding:12px 18px;font-size:0.76rem;transform:translateY(16px);opacity:0;transition:all 0.3s;pointer-events:none}
+    #toast.show{transform:none;opacity:1}
+
+    /* ── ACTIONS ROW ── */
+    .top-actions{display:flex;justify-content:flex-end;gap:10px;margin-bottom:16px}
+
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="lw">
+    <div class="logo">Michaels Floristenwerkstatt</div>
+    <div class="sub">Admin-Bereich · Sicher anmelden</div>
+    <div class="lf"><label>Benutzername</label><input id="u" type="text" autocomplete="username" placeholder="admin" /></div>
+    <div class="lf"><label>Passwort</label><input id="p" type="password" autocomplete="current-password" placeholder="••••••••" /></div>
+    <button class="l-btn" onclick="doLogin()">Anmelden</button>
+    <div class="l-err" id="lerr">Ungültige Anmeldedaten.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sb">
+      <div class="sb-logo"><div class="br">M. Floristenwerkstatt</div><div class="su">Admin Dashboard</div></div>
+      <nav class="sb-nav">
+        <div class="sb-sec">Verwaltung</div>
+        <div class="sb-item active" id="nav-inquiries" onclick="goPage('inquiries',this)"><span class="sb-ic">💬</span>Anfragen<span class="sb-badge" id="inq-badge" style="display:none">0</span></div>
+        <div class="sb-item" id="nav-orders" onclick="goPage('orders',this)"><span class="sb-ic">📋</span>Aufträge</div>
+        <div class="sb-item" id="nav-calendar" onclick="goPage('calendar',this)"><span class="sb-ic">📅</span>Kalender</div>
+        <div class="sb-item" id="nav-customers" onclick="goPage('customers',this)"><span class="sb-ic">👥</span>Kunden</div>
+        <div class="sb-sec">Lager</div>
+        <div class="sb-item" id="nav-inventory" onclick="goPage('inventory',this)"><span class="sb-ic">🌸</span>Lagerstatus<span class="sb-alert-badge" id="inv-alert-badge" style="display:none">!</span></div>
+      </nav>
+      <div class="sb-foot">
+        <div class="role-row"><div class="role-dot"></div><div class="role-txt">Angemeldet als <b>Inhaber</b></div></div>
+        <button class="logout" onclick="doLogout()">⎋ Abmelden</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- INQUIRIES -->
+      <div class="page active" id="page-inquiries">
+        <div class="ph"><h1>Kundenanfragen</h1><p>Eingehende Anfragen vom Kontaktformular der Website.</p></div>
+        <div class="rls"><span>🔐</span><p>Zeilensicherheit aktiv — Inhaber kann alle Aktionen ausführen. Archivierte Zeilen sind schreibgeschützt.</p><span class="rls-role">Inhaber</span></div>
+        <div class="card"><div class="card-h"><span class="card-title">Eingegangene Anfragen</span><span class="chip ch-gold" id="inq-count">0 Anfragen</span></div><div id="inq-body"></div></div>
+      </div>
+
+      <!-- ORDERS -->
+      <div class="page" id="page-orders">
+        <div class="ph"><h1>Aufträge</h1><p>Aktive und abgeschlossene Aufträge verwalten.</p></div>
+        <div class="rls"><span>🔐</span><p>Stornierte und abgeschlossene Zeilen sind eingeschränkt. Inhaber hat vollen Zugriff.</p><span class="rls-role">Inhaber</span></div>
+        <div class="metrics" id="ord-metrics">
+          <div class="mc"><div class="mc-lbl">Offen</div><div class="mc-val" id="m-open">0</div><div class="mc-sub">aktive Aufträge</div></div>
+          <div class="mc"><div class="mc-lbl">Abgeschlossen</div><div class="mc-val" id="m-done">0</div><div class="mc-sub">diesen Monat</div></div>
+          <div class="mc"><div class="mc-lbl">Umsatz (Monat)</div><div class="mc-val" id="m-rev">€ 0</div><div class="mc-sub">abgeschlossene Aufträge</div></div>
+          <div class="mc"><div class="mc-lbl">Ø Auftragswert</div><div class="mc-val" id="m-avg">€ 0</div><div class="mc-sub">Durchschnitt</div></div>
+        </div>
+        <div class="top-actions">
+          <button class="ab ap" onclick="exportCSV()">CSV exportieren</button>
+          <button class="ab ap" onclick="openAddOrder()">+ Auftrag hinzufügen</button>
+        </div>
+        <div class="card"><div class="card-h"><span class="card-title">Alle Aufträge</span><span class="chip ch-gold" id="ord-count">0 Aufträge</span></div><div id="ord-body"></div></div>
+      </div>
+
+      <!-- CALENDAR -->
+      <div class="page" id="page-calendar">
+        <div class="ph"><h1>Kalender</h1><p>Aufträge nach Datum anzeigen.</p></div>
+        <div class="card" style="padding:24px">
+          <div class="cal-nav">
+            <button class="cal-nav-btn" onclick="calNav(-1)">←</button>
+            <h2 id="cal-title"></h2>
+            <button class="cal-nav-btn" onclick="calNav(1)">→</button>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+          <div class="cal-legend"><span></span>Auftrag geplant an diesem Tag</div>
+        </div>
+      </div>
+
+      <!-- CUSTOMERS -->
+      <div class="page" id="page-customers">
+        <div class="ph"><h1>Kundenstamm</h1><p>Automatisch erstellt aus Anfragen und Aufträgen.</p></div>
+        <input class="search-input" id="cust-search" placeholder="Kunden suchen..." oninput="renderCustomers()" />
+        <div id="cust-body"></div>
+      </div>
+
+      <!-- INVENTORY -->
+      <div class="page" id="page-inventory">
+        <div class="ph"><h1>Lagerstatus</h1><p>Verfügbarkeit verwalten — Änderungen werden sofort gespeichert.</p></div>
+        <div id="inv-alert" style="display:none" class="alert-banner"><span>⚠️</span><span id="inv-alert-txt"></span></div>
+        <div class="card"><div class="card-h"><span class="card-title">Blumen & Verfügbarkeit</span></div><div class="inv-grid" id="inv-grid"></div></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ADD ORDER MODAL -->
+<div class="mb" id="add-order-modal">
+  <div class="mbox">
+    <button class="mx" onclick="closeAddOrder()">✕</button>
+    <h3>Neuen Auftrag erstellen</h3>
+    <div class="mr"><div class="mf"><label>Kundenname</label><input type="text" id="ao-name" maxlength="100" placeholder="Name" /></div><div class="mf"><label>Telefon</label><input type="tel" id="ao-phone" maxlength="30" placeholder="Nummer" /></div></div>
+    <div class="mr"><div class="mf"><label>Anlass</label><select id="ao-occasion"><option value="">Bitte wählen</option><option>Hochzeit</option><option>Event / Feier</option><option>Trauerfall</option><option>Geburtstagsstrauß</option><option>Sonstiges</option></select></div><div class="mf"><label>Termin</label><input type="date" id="ao-date" /></div></div>
+    <div class="mf"><label>Preis (€)</label><input type="number" id="ao-price" placeholder="z.B. 120" min="0" step="0.01" /></div>
+    <div class="mf"><label>Notizen</label><textarea id="ao-notes" placeholder="Interne Notizen..."></textarea></div>
+    <button class="ms" onclick="saveOrder()">Auftrag speichern</button>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="mb" id="detail-modal">
+  <div class="mbox">
+    <button class="mx" onclick="closeDetail()">✕</button>
+    <h3 id="d-title">Details</h3>
+    <div id="d-body"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+  // ── AUTH ──
+  const CREDS={user:'admin',pass:'florist2025'};
+  document.getElementById('p').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+  function doLogin(){
+    const u=document.getElementById('u').value.trim(),p=document.getElementById('p').value;
+    if(u===CREDS.user&&p===CREDS.pass){sessionStorage.setItem('mf_auth','1');document.getElementById('login').style.display='none';document.getElementById('app').style.display='block';boot();}
+    else document.getElementById('lerr').style.display='block';
+  }
+  function doLogout(){sessionStorage.removeItem('mf_auth');location.reload();}
+  if(sessionStorage.getItem('mf_auth')){document.getElementById('login').style.display='none';document.getElementById('app').style.display='block';boot();}
+
+  // ── NAV ──
+  function goPage(id,el){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById('page-'+id).classList.add('active');
+    el.classList.add('active');
+    if(id==='inquiries')renderInquiries();
+    if(id==='orders'){renderOrders();updateMetrics();}
+    if(id==='calendar')renderCalendar();
+    if(id==='customers')renderCustomers();
+    if(id==='inventory')renderInventory();
+  }
+
+  // ── DATA ──
+  function gI(){return JSON.parse(localStorage.getItem('mf_inquiries')||'[]');}
+  function sI(d){localStorage.setItem('mf_inquiries',JSON.stringify(d));}
+  function gO(){return JSON.parse(localStorage.getItem('mf_orders')||'[]');}
+  function sO(d){localStorage.setItem('mf_orders',JSON.stringify(d));}
+  function gInv(){
+    const def=[
+      {id:1,emoji:'🌹',name:'Rosen',notes:'',on:true,offAt:null},
+      {id:2,emoji:'🌷',name:'Tulpen',notes:'',on:true,offAt:null},
+      {id:3,emoji:'💐',name:'Gemischte Sträuße',notes:'',on:true,offAt:null},
+      {id:4,emoji:'🌸',name:'Kirschblüten',notes:'',on:true,offAt:null},
+      {id:5,emoji:'🌻',name:'Sonnenblumen',notes:'',on:true,offAt:null},
+      {id:6,emoji:'🌺',name:'Hibiskus',notes:'',on:false,offAt:null},
+      {id:7,emoji:'🪷',name:'Pfingstrosen',notes:'',on:true,offAt:null},
+      {id:8,emoji:'🌼',name:'Margueriten',notes:'',on:true,offAt:null},
+      {id:9,emoji:'🍃',name:'Grünpflanzen',notes:'',on:true,offAt:null},
+    ];
+    return JSON.parse(localStorage.getItem('mf_inventory')||JSON.stringify(def));
+  }
+  function sInv(d){localStorage.setItem('mf_inventory',JSON.stringify(d));}
+
+  function fmtD(iso){if(!iso)return '—';try{return new Date(iso).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});}catch{return iso;}}
+  function fmtT(iso){if(!iso)return '—';try{const d=new Date(iso);return d.toLocaleDateString('de-DE')+' '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});}catch{return iso;}}
+  function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+  function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+
+  // ── BOOT ──
+  function boot(){renderInquiries();checkInvAlerts();updateMetrics();}
+
+  // ── BADGE ──
+  function updateBadge(){
+    const n=gI().filter(i=>!i.read).length;
+    const b=document.getElementById('inq-badge');
+    b.textContent=n;b.style.display=n>0?'inline-block':'none';
+    document.getElementById('inq-count').textContent=gI().length+' Anfragen';
+  }
+
+  // ── LOW STOCK ALERTS ──
+  function checkInvAlerts(){
+    const inv=gInv();const now=Date.now();const THREE_DAYS=3*24*60*60*1000;
+    const low=inv.filter(f=>!f.on&&f.offAt&&(now-f.offAt)>THREE_DAYS);
+    const badge=document.getElementById('inv-alert-badge');
+    badge.style.display=low.length>0?'inline-block':'none';
+    const banner=document.getElementById('inv-alert');
+    if(low.length>0){banner.style.display='flex';document.getElementById('inv-alert-txt').textContent=low.map(f=>f.name).join(', ')+' — seit mehr als 3 Tagen nicht verfügbar.';}
+    else banner.style.display='none';
+  }
+
+  // ── METRICS ──
+  function updateMetrics(){
+    const orders=gO();
+    const now=new Date();const month=now.getMonth(),year=now.getFullYear();
+    const thisMonth=orders.filter(o=>{if(!o.created)return false;const d=new Date(o.created);return d.getMonth()===month&&d.getFullYear()===year;});
+    const open=orders.filter(o=>o.status==='active').length;
+    const done=thisMonth.filter(o=>o.status==='done').length;
+    const rev=thisMonth.filter(o=>o.status==='done'&&o.price).reduce((s,o)=>s+parseFloat(o.price||0),0);
+    const allDone=orders.filter(o=>o.status==='done'&&o.price);
+    const avg=allDone.length>0?allDone.reduce((s,o)=>s+parseFloat(o.price||0),0)/allDone.length:0;
+    document.getElementById('m-open').textContent=open;
+    document.getElementById('m-done').textContent=done;
+    document.getElementById('m-rev').textContent='€ '+rev.toFixed(0);
+    document.getElementById('m-avg').textContent='€ '+avg.toFixed(0);
+    document.getElementById('ord-count').textContent=orders.length+' Aufträge';
+  }
+
+  // ── INQUIRIES ──
+  function renderInquiries(){
+    updateBadge();
+    const list=gI();const body=document.getElementById('inq-body');
+    if(!list.length){body.innerHTML=`<div class="empty"><div class="ei">💬</div><h3>Noch keine Anfragen</h3><p>Anfragen vom Kontaktformular erscheinen hier automatisch.</p></div>`;return;}
+    body.innerHTML=`<div class="tw"><table><thead><tr><th>Datum</th><th>Name</th><th>Anlass</th><th>Telefon</th><th>Status</th><th style="text-align:right">Aktionen</th></tr></thead><tbody>`+
+    list.map((inq,i)=>{
+      const isNew=!inq.read,isArch=inq.status==='archived',isConv=inq.status==='converted';
+      const chip=isNew?'<span class="chip ch-gold">Neu</span>':isArch?'<span class="chip ch-muted">Archiviert</span>':isConv?'<span class="chip ch-ok">→ Auftrag</span>':'<span class="chip ch-info">Gelesen</span>';
+      let acts='';
+      if(isArch) acts=`<span class="lk" title="Archiviert">🔒</span><button class="ab ag" onclick="viewInq(${i})">Details</button><button class="ab ad" onclick="delInq(${i})">Löschen</button>`;
+      else if(isConv) acts=`<button class="ab ag" onclick="viewInq(${i})">Details</button><span class="lk" title="Bereits übernommen">🔒</span>`;
+      else acts=`<button class="ab ap" onclick="convToOrder(${i})">→ Auftrag</button><button class="ab ag" onclick="viewInq(${i})">Details</button><button class="ab ad" onclick="archInq(${i})">Archivieren</button>`;
+      return `<tr class="${isArch?'row-locked':''}"><td class="dim">${fmtT(inq.timestamp)}</td><td style="font-weight:${isNew?500:400}">${esc(inq.name||'—')}${isNew?' <span style="color:var(--gold);font-size:0.55rem">●</span>':''}</td><td>${esc(inq.occasion||'—')}</td><td>${esc(inq.phone||'—')}</td><td>${chip}</td><td><div class="ra">${acts}</div></td></tr>`;
+    }).join('')+`</tbody></table></div>`;
+  }
+  function viewInq(i){const inq=gI()[i];const l=gI();l[i].read=true;sI(l);updateBadge();renderInquiries();showDetail('Anfrage von '+(inq.name||'—'),`<div class="detail-f"><div class="dl">Datum</div><div class="dv">${fmtT(inq.timestamp)}</div></div><div class="detail-f"><div class="dl">Name</div><div class="dv">${esc(inq.name||'—')}</div></div><div class="detail-f"><div class="dl">Telefon</div><div class="dv">${esc(inq.phone||'—')}</div></div><div class="detail-f"><div class="dl">Anlass</div><div class="dv">${esc(inq.occasion||'—')}</div></div>${inq.date?`<div class="detail-f"><div class="dl">Datum</div><div class="dv">${esc(inq.date)}</div></div>`:''}<div class="detail-f"><div class="dl">Nachricht</div><div class="dv" style="white-space:pre-wrap">${esc(inq.message||'—')}</div></div><div class="detail-f"><div class="dl">Quelle</div><div class="dv">${inq.source==='service-card'?'Leistungsseite':'Kontaktformular'}</div></div>`);}
+  function archInq(i){const l=gI();l[i].status='archived';l[i].read=true;sI(l);renderInquiries();toast('Archiviert.');}
+  function delInq(i){if(!confirm('Löschen?'))return;const l=gI();l.splice(i,1);sI(l);renderInquiries();toast('Gelöscht.');}
+  function convToOrder(i){
+    const l=gI();const inq=l[i];l[i].status='converted';l[i].read=true;sI(l);
+    const ords=gO();ords.unshift({id:Date.now().toString(),name:inq.name,phone:inq.phone,occasion:inq.occasion,date:inq.date||'',notes:inq.message||'',price:'',status:'active',created:new Date().toISOString(),fromInquiry:true});
+    sO(ords);renderInquiries();toast('Als Auftrag übernommen.');
+  }
+
+  // ── ORDERS ──
+  function renderOrders(){
+    const ords=gO();const body=document.getElementById('ord-body');
+    if(!ords.length){body.innerHTML=`<div class="empty"><div class="ei">📋</div><h3>Noch keine Aufträge</h3><p>Erstellen Sie einen Auftrag oder nehmen Sie eine Anfrage an.</p><button class="ab ap" onclick="openAddOrder()">+ Hinzufügen</button></div>`;return;}
+    body.innerHTML=`<div class="tw"><table><thead><tr><th>Erstellt</th><th>Kunde</th><th>Anlass</th><th>Termin</th><th>Preis</th><th>Status</th><th style="text-align:right">Aktionen</th></tr></thead><tbody>`+
+    ords.map((o,i)=>{
+      const isAct=o.status==='active',isDone=o.status==='done',isCan=o.status==='cancelled';
+      const chip=isAct?'<span class="chip ch-info">Aktiv</span>':isDone?'<span class="chip ch-ok">Abgeschlossen</span>':'<span class="chip ch-err">Storniert</span>';
+      let acts='';
+      if(isCan) acts=`<span class="lk" title="Storniert">🔒</span><button class="ab ag" onclick="viewOrd(${i})">Details</button><button class="ab ad" onclick="delOrd(${i})">Löschen</button>`;
+      else if(isDone) acts=`<button class="ab ag" onclick="viewOrd(${i})">Details</button><button class="ab ad" onclick="setOrdStatus(${i},'cancelled')">Stornieren</button><span class="lk" title="Abgeschlossen">🔒</span>`;
+      else acts=`<button class="ab ap" onclick="setOrdStatus(${i},'done')">Abschließen</button><button class="ab ag" onclick="viewOrd(${i})">Details</button><button class="ab ad" onclick="setOrdStatus(${i},'cancelled')">Stornieren</button>`;
+      return `<tr class="${isCan?'row-locked':''}"><td class="dim">${fmtD(o.created)}</td><td style="font-weight:500">${esc(o.name||'—')}</td><td>${esc(o.occasion||'—')}</td><td class="dim">${o.date?fmtD(o.date):'—'}</td><td>${o.price?'€ '+parseFloat(o.price).toFixed(0):'—'}</td><td>${chip}</td><td><div class="ra">${acts}</div></td></tr>`;
+    }).join('')+`</tbody></table></div>`;
+    updateMetrics();
+  }
+  function viewOrd(i){const o=gO()[i];showDetail('Auftrag – '+(o.name||'—'),`<div class="detail-f"><div class="dl">Erstellt</div><div class="dv">${fmtT(o.created)}</div></div><div class="detail-f"><div class="dl">Name</div><div class="dv">${esc(o.name||'—')}</div></div><div class="detail-f"><div class="dl">Telefon</div><div class="dv">${esc(o.phone||'—')}</div></div><div class="detail-f"><div class="dl">Anlass</div><div class="dv">${esc(o.occasion||'—')}</div></div><div class="detail-f"><div class="dl">Termin</div><div class="dv">${o.date?fmtD(o.date):'—'}</div></div><div class="detail-f"><div class="dl">Preis</div><div class="dv">${o.price?'€ '+parseFloat(o.price).toFixed(2):'Nicht angegeben'}</div></div><div class="detail-f"><div class="dl">Status</div><div class="dv">${o.status==='active'?'Aktiv':o.status==='done'?'Abgeschlossen':'Storniert'}</div></div>${o.notes?`<div class="detail-f"><div class="dl">Notizen</div><div class="dv" style="white-space:pre-wrap">${esc(o.notes)}</div></div>`:''}${o.fromInquiry?`<div class="detail-f"><div class="dl">Quelle</div><div class="dv">Aus Kundenanfrage</div></div>`:''}`);}
+  function setOrdStatus(i,s){const ords=gO();ords[i].status=s;sO(ords);renderOrders();toast(s==='done'?'Abgeschlossen.':'Storniert.');}
+  function delOrd(i){if(!confirm('Löschen?'))return;const o=gO();o.splice(i,1);sO(o);renderOrders();toast('Gelöscht.');}
+  function openAddOrder(){['ao-name','ao-phone','ao-notes'].forEach(id=>document.getElementById(id).value='');document.getElementById('ao-occasion').value='';document.getElementById('ao-date').value='';document.getElementById('ao-price').value='';document.getElementById('add-order-modal').classList.add('open');}
+  function closeAddOrder(){document.getElementById('add-order-modal').classList.remove('open');}
+  function saveOrder(){
+    const name=document.getElementById('ao-name').value.trim();if(!name){toast('Bitte Namen eingeben.');return;}
+    const ords=gO();ords.unshift({id:Date.now().toString(),name,phone:document.getElementById('ao-phone').value,occasion:document.getElementById('ao-occasion').value,date:document.getElementById('ao-date').value,price:document.getElementById('ao-price').value,notes:document.getElementById('ao-notes').value,status:'active',created:new Date().toISOString(),fromInquiry:false});
+    sO(ords);closeAddOrder();renderOrders();toast('Auftrag gespeichert.');
+  }
+
+  // ── CSV EXPORT ──
+  function exportCSV(){
+    const ords=gO();if(!ords.length){toast('Keine Aufträge vorhanden.');return;}
+    const rows=[['Datum','Name','Telefon','Anlass','Termin','Preis','Status'],...ords.map(o=>[fmtD(o.created),o.name||'',o.phone||'',o.occasion||'',o.date?fmtD(o.date):'',o.price||'',o.status==='active'?'Aktiv':o.status==='done'?'Abgeschlossen':'Storniert'])];
+    const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+    const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='auftraege-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+    toast('CSV heruntergeladen.');
+  }
+
+  // ── CALENDAR ──
+  let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
+  function calNav(d){calMonth+=d;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+  function renderCalendar(){
+    const months=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    document.getElementById('cal-title').textContent=months[calMonth]+' '+calYear;
+    const ords=gO();const today=new Date();
+    const firstDay=new Date(calYear,calMonth,1).getDay();const offset=(firstDay+6)%7;
+    const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+    const grid=document.getElementById('cal-grid');
+    const dows=['Mo','Di','Mi','Do','Fr','Sa','So'];
+    let html=dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+    for(let i=0;i<offset;i++) html+=`<div class="cal-day empty-day"></div>`;
+    for(let day=1;day<=daysInMonth;day++){
+      const isToday=today.getDate()===day&&today.getMonth()===calMonth&&today.getFullYear()===calYear;
+      const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const dayOrds=ords.filter(o=>o.date&&o.date===dateStr&&o.status!=='cancelled');
+      html+=`<div class="cal-day${isToday?' today':''}" onclick="calDayClick('${dateStr}','${day}')"><div class="cal-day-num">${day}</div>${dayOrds.slice(0,2).map(o=>`<span class="cal-order-dot">${esc(o.name||'?')}</span>`).join('')}${dayOrds.length>2?`<span class="cal-order-dot">+${dayOrds.length-2} weitere</span>`:''}</div>`;
+    }
+    grid.innerHTML=html;
+  }
+  function calDayClick(dateStr,day){
+    const ords=gO().filter(o=>o.date===dateStr&&o.status!=='cancelled');
+    if(!ords.length){toast('Keine Aufträge an diesem Tag.');return;}
+    showDetail(`Aufträge am ${day}.`,ords.map(o=>`<div class="detail-f"><div class="dl">${esc(o.occasion||'Auftrag')}</div><div class="dv">${esc(o.name||'—')}${o.price?' · € '+parseFloat(o.price).toFixed(0):''}</div></div>`).join(''));
+  }
+
+  // ── CUSTOMERS ──
+  function renderCustomers(){
+    const q=(document.getElementById('cust-search')?.value||'').toLowerCase();
+    const inqs=gI(),ords=gO();
+    const map={};
+    [...inqs,...ords].forEach(item=>{
+      const key=(item.phone||item.name||'').trim().toLowerCase();if(!key)return;
+      if(!map[key])map[key]={name:item.name||'—',phone:item.phone||'—',contacts:[],lastContact:item.timestamp||item.created||''};
+      map[key].contacts.push(item);
+      const t=item.timestamp||item.created||'';if(t>map[key].lastContact)map[key].lastContact=t;
+    });
+    let custs=Object.values(map).sort((a,b)=>b.lastContact.localeCompare(a.lastContact));
+    if(q)custs=custs.filter(c=>c.name.toLowerCase().includes(q)||c.phone.toLowerCase().includes(q));
+    const body=document.getElementById('cust-body');
+    if(!custs.length){body.innerHTML=`<div class="empty"><div class="ei">👥</div><h3>Keine Kunden gefunden</h3><p>Kunden erscheinen automatisch, sobald Anfragen eingehen.</p></div>`;return;}
+    body.innerHTML=custs.map(c=>{
+      const initials=c.name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+      return `<div class="cust-card"><div class="cust-av">${esc(initials)}</div><div class="cust-info"><div class="cust-name">${esc(c.name)}</div><div class="cust-meta">${esc(c.phone)} · Zuletzt: ${fmtD(c.lastContact)}</div></div><div class="cust-stats"><div><div class="cust-stat-num">${c.contacts.length}</div><div class="cust-stat-lbl">Kontakte</div></div></div></div>`;
+    }).join('');
+  }
+
+  // ── INVENTORY ──
+  function renderInventory(){
+    checkInvAlerts();
+    const inv=gInv();
+    document.getElementById('inv-grid').innerHTML=inv.map((f,i)=>{
+      const daysOff=!f.on&&f.offAt?Math.floor((Date.now()-f.offAt)/(1000*60*60*24)):0;
+      const isLow=daysOff>=3;
+      return `<div class="inv-card ${f.on?'':'out'} ${isLow?'low-alert':''}" id="ic${i}">
+        <div class="inv-top"><span class="inv-em">${f.emoji}</span><span class="inv-name">${f.name}${isLow?` <span style="color:var(--err);font-size:0.6rem">⚠️ ${daysOff}T</span>`:''}</span></div>
+        <input class="inv-note" type="text" placeholder="Notizen..." value="${esc(f.notes||'')}" oninput="updateNote(${i},this.value)" maxlength="60" />
+        <div class="inv-foot">
+          <span class="inv-st" style="color:${f.on?'var(--ok)':'var(--err)'}">${f.on?'Verfügbar':'Nicht verfügbar'}</span>
+          <label class="tgl"><input type="checkbox" ${f.on?'checked':''} onchange="toggleInv(${i},this)" /><span class="tgl-sl"></span></label>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  function toggleInv(i,el){const inv=gInv();inv[i].on=el.checked;inv[i].offAt=el.checked?null:Date.now();sInv(inv);const c=document.getElementById('ic'+i);c.classList.toggle('out',!el.checked);c.querySelector('.inv-st').style.color=el.checked?'var(--ok)':'var(--err)';c.querySelector('.inv-st').textContent=el.checked?'Verfügbar':'Nicht verfügbar';checkInvAlerts();}
+  function updateNote(i,v){const inv=gInv();inv[i].notes=v;sInv(inv);}
+
+  // ── DETAIL MODAL ──
+  function showDetail(title,html){document.getElementById('d-title').textContent=title;document.getElementById('d-body').innerHTML=html;document.getElementById('detail-modal').classList.add('open');}
+  function closeDetail(){document.getElementById('detail-modal').classList.remove('open');}
+
+  // ── MODAL CLOSE OUTSIDE ──
+  ['detail-modal','add-order-modal'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id)){if(id==='detail-modal')closeDetail();else closeAddOrder();}});});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDetail();closeAddOrder();}});
+</script>
+</body>
+</html>
