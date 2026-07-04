@@ -1,816 +1,691 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Michaels Floristenwerkstatt – Landstuhl</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --g0:#131915; --g1:#192019; --g2:#1e2b20; --g3:#253128;
-      --gold:#c9a352; --gold2:#dbb96a; --gdim:rgba(201,163,82,0.1);
-      --cream:#ede7d8; --cream2:#b8b0a0; --muted:rgba(237,231,216,0.35);
-      --line:rgba(201,163,82,0.11);
-    }
-    html { scroll-behavior: smooth; }
-    body { background:var(--g0); color:var(--cream); font-family:'Inter',sans-serif; cursor:none; overflow-x:hidden; }
-    ::-webkit-scrollbar { width:3px; } ::-webkit-scrollbar-track { background:var(--g0); } ::-webkit-scrollbar-thumb { background:var(--gold); }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mission Control · Agent Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Orbitron:wght@600;800&display=swap" rel="stylesheet" />
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08060f;--bg2:#0d0a1a;--panel:#120e22;--panel2:#171233;
+  --line:rgba(168,85,247,0.22);--line2:rgba(168,85,247,0.4);
+  --ink:#e7defb;--dim:rgba(231,222,251,0.5);--faint:rgba(231,222,251,0.28);
+  --pink:#ff2d95;--mag:#ff4fd8;--purple:#a855f7;--violet:#7c3aed;
+  --cyan:#22d3ee;--green:#39ff8b;--amber:#ffb020;--red:#ff4d5e;
+  --glow-pink:0 0 12px rgba(255,45,149,.55);
+  --glow-cyan:0 0 12px rgba(34,211,238,.5);
+  --glow-green:0 0 10px rgba(57,255,139,.5);
+}
+html,body{height:100%}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;line-height:1.45;
+  overflow:hidden;
+  background-image:
+    radial-gradient(1200px 600px at 80% -10%,rgba(124,58,237,.22),transparent 60%),
+    radial-gradient(900px 500px at 0% 110%,rgba(255,45,149,.14),transparent 55%);
+}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(168,85,247,.35);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(168,85,247,.6)}
+a{color:inherit}
+.scan{position:fixed;inset:0;pointer-events:none;z-index:200;opacity:.4;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,.18) 3px)}
+.mono-glow{text-shadow:0 0 8px currentColor}
 
-    /* ── LOADER ── */
-    #loader {
-      position:fixed; inset:0; z-index:9900;
-      background:var(--g0);
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      transition:opacity 0.7s ease;
-    }
-    #loader.out { opacity:0; pointer-events:none; }
-    .ld-logo { font-family:'Playfair Display',serif; font-size:clamp(1.4rem,5vw,2.2rem); color:var(--cream); text-align:center; letter-spacing:0.04em; }
-    .ld-sub { font-size:0.6rem; letter-spacing:0.22em; text-transform:uppercase; color:var(--gold); margin-top:10px; opacity:0; animation:fadeIn 0.6s 0.3s ease forwards; }
-    .ld-track { width:180px; height:1px; background:rgba(201,163,82,0.15); margin-top:36px; overflow:hidden; }
-    .ld-bar { height:100%; background:var(--gold); width:0; animation:ldBar 1.3s 0.2s ease forwards; }
-    @keyframes ldBar { to { width:100%; } }
+/* ── LAYOUT ── */
+#app{display:grid;grid-template-rows:auto 1fr auto;height:100vh}
 
-    /* ── ROSE CURSOR ── */
-    #rose { position:fixed; z-index:9800; pointer-events:none; font-size:20px; transform:translate(-4px,-20px) rotate(-25deg); transition:font-size 0.2s,transform 0.2s; }
-    #rose.big { font-size:28px; transform:translate(-6px,-28px) rotate(-10deg); }
-    #trail { position:fixed; z-index:9799; pointer-events:none; width:5px; height:5px; border-radius:50%; background:rgba(201,163,82,0.45); transform:translate(-50%,-50%); transition:left 0.2s ease,top 0.2s ease; }
+/* ── BOOT SEQUENCE ── */
+#boot{position:fixed;inset:0;z-index:500;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:opacity .5s}
+#boot.gone{opacity:0;pointer-events:none}
+.bootbox{width:min(560px,90vw);padding:0 20px}
+.bootbox .bt{font-family:'Orbitron',sans-serif;font-size:22px;letter-spacing:.06em;background:linear-gradient(90deg,var(--cyan),var(--mag));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:16px}
+#bootlog{font-size:12px;line-height:1.7;color:var(--dim);min-height:180px}
+#bootlog .ok{color:var(--green)}#bootlog .cy{color:var(--cyan)}#bootlog .mg{color:var(--mag)}
+#bootlog .cur{color:var(--cyan);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
 
-    /* ── WHATSAPP FAB ── */
-    .wa-fab {
-      position:fixed; bottom:32px; right:32px; z-index:800;
-      width:56px; height:56px; border-radius:50%;
-      background:#25D366; color:#fff;
-      display:flex; align-items:center; justify-content:center;
-      box-shadow:0 8px 28px rgba(37,211,102,0.4);
-      text-decoration:none; transition:transform 0.2s,box-shadow 0.2s;
-      animation:waPulse 3s ease-in-out infinite;
-    }
-    .wa-fab:hover { transform:scale(1.1); box-shadow:0 12px 36px rgba(37,211,102,0.6); animation:none; }
-    .wa-fab svg { width:28px; height:28px; }
-    @keyframes waPulse { 0%,100%{box-shadow:0 8px 28px rgba(37,211,102,0.4);} 50%{box-shadow:0 8px 40px rgba(37,211,102,0.7);} }
+/* ── FOOTER TICKER ── */
+.footer{display:flex;align-items:center;border-top:1px solid var(--line);background:var(--bg2);height:30px;overflow:hidden;position:relative;z-index:20}
+.footer .lab{padding:0 12px;font-size:9px;letter-spacing:.16em;color:var(--mag);border-right:1px solid var(--line);white-space:nowrap;height:100%;display:flex;align-items:center;background:rgba(255,45,149,.06)}
+.ticker{flex:1;overflow:hidden;white-space:nowrap}
+.ticker .track{display:inline-block;padding-left:100%;animation:marquee 34s linear infinite;font-size:11px;color:var(--dim)}
+.ticker .track b{color:var(--cyan)}.ticker .track .sep{color:var(--faint);padding:0 14px}
+@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+.footer .links{display:flex;height:100%;border-left:1px solid var(--line)}
+.footer .links a{display:flex;align-items:center;padding:0 14px;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);text-decoration:none;border-left:1px solid rgba(168,85,247,.12);transition:.15s}
+.footer .links a:hover{color:var(--cyan);background:rgba(34,211,238,.08)}
+.topbar{
+  display:flex;align-items:stretch;gap:0;border-bottom:1px solid var(--line);
+  background:linear-gradient(90deg,rgba(124,58,237,.18),rgba(255,45,149,.12));
+  backdrop-filter:blur(4px);position:relative;z-index:20;
+}
+.brand{display:flex;align-items:center;gap:12px;padding:0 20px;border-right:1px solid var(--line);min-width:250px}
+.brand .logo{
+  font-family:'Orbitron',sans-serif;font-weight:800;font-size:15px;letter-spacing:.06em;
+  background:linear-gradient(90deg,var(--cyan),var(--mag));-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.brand .ver{font-size:9px;color:var(--faint);letter-spacing:.2em}
+.brand .pulse{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:var(--glow-green);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}
+.kpis{flex:1;display:flex;overflow-x:auto}
+.kpi{padding:9px 20px;border-right:1px solid var(--line);min-width:118px;display:flex;flex-direction:column;justify-content:center}
+.kpi .l{font-size:8.5px;letter-spacing:.18em;color:var(--faint);text-transform:uppercase}
+.kpi .v{font-size:16px;font-weight:700;margin-top:2px}
+.kpi .d{font-size:9px;color:var(--dim)}
+.v.rev{color:var(--green)}.v.spend{color:var(--amber)}.v.tasks{color:var(--cyan)}
+.v.blk{color:var(--red)}.v.act{color:var(--mag)}
+.clock{padding:0 18px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;border-left:1px solid var(--line)}
+.clock .t{font-size:15px;font-weight:700;color:var(--cyan);letter-spacing:.05em}
+.clock .z{font-size:8.5px;color:var(--faint);letter-spacing:.15em}
 
-    /* ── NAV ── */
-    nav { position:fixed; top:0; left:0; right:0; z-index:700; padding:28px 56px; display:flex; align-items:center; justify-content:space-between; transition:padding 0.4s,background 0.4s,border-color 0.4s; border-bottom:1px solid transparent; }
-    nav.scrolled { padding:16px 56px; background:rgba(19,25,21,0.95); backdrop-filter:blur(24px); border-bottom-color:var(--line); }
-    .nav-logo { font-family:'Playfair Display',serif; font-size:1rem; color:var(--gold); text-decoration:none; letter-spacing:0.04em; }
-    .nav-links { display:flex; align-items:center; gap:40px; list-style:none; }
-    .nav-links a { font-size:0.7rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--cream); opacity:0.45; text-decoration:none; transition:opacity 0.2s; }
-    .nav-links a:hover { opacity:1; }
-    .nav-cta { font-size:0.7rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold) !important; opacity:1 !important; border:1px solid rgba(201,163,82,0.35); padding:9px 20px; cursor:pointer; background:transparent; font-family:'Inter',sans-serif; transition:background 0.2s,border-color 0.2s; }
-    .nav-cta:hover { background:rgba(201,163,82,0.08); border-color:var(--gold); }
-    .live-dot { display:inline-flex; align-items:center; gap:6px; font-size:0.62rem; letter-spacing:0.1em; text-transform:uppercase; }
-    .live-dot span { width:7px; height:7px; border-radius:50%; background:#4aba7a; box-shadow:0 0 6px rgba(74,186,122,0.7); animation:livePulse 2s ease infinite; }
-    .live-dot.closed span { background:var(--muted); box-shadow:none; animation:none; }
-    @keyframes livePulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
-    .hamburger { display:none; flex-direction:column; gap:5px; width:30px; cursor:pointer; background:none; border:none; padding:0; z-index:701; }
-    .hamburger span { display:block; height:1px; background:var(--cream); transition:transform 0.35s,opacity 0.25s,width 0.25s; transform-origin:center; }
-    .hamburger span:nth-child(2) { width:70%; }
-    .hamburger.open span:nth-child(1) { transform:translateY(6px) rotate(45deg); width:100%; }
-    .hamburger.open span:nth-child(2) { opacity:0; }
-    .hamburger.open span:nth-child(3) { transform:translateY(-6px) rotate(-45deg); }
+.main{display:grid;grid-template-columns:262px 1fr;min-height:0}
 
-    /* ── MOBILE MENU ── */
-    .mob-overlay { position:fixed; inset:0; z-index:690; background:var(--g0); display:flex; flex-direction:column; justify-content:center; padding:80px 44px 60px; opacity:0; pointer-events:none; transition:opacity 0.4s; }
-    .mob-overlay.open { opacity:1; pointer-events:all; }
-    .mob-links { list-style:none; }
-    .mob-links li { border-bottom:1px solid var(--line); transform:translateY(28px); opacity:0; transition:transform 0.5s ease,opacity 0.5s ease; }
-    .mob-overlay.open .mob-links li { transform:none; opacity:1; }
-    .mob-overlay.open .mob-links li:nth-child(1){transition-delay:0.04s}
-    .mob-overlay.open .mob-links li:nth-child(2){transition-delay:0.09s}
-    .mob-overlay.open .mob-links li:nth-child(3){transition-delay:0.14s}
-    .mob-overlay.open .mob-links li:nth-child(4){transition-delay:0.19s}
-    .mob-links a { display:block; padding:20px 0; font-family:'Playfair Display',serif; font-size:clamp(2.2rem,8vw,3.4rem); color:var(--cream); text-decoration:none; font-weight:700; transition:color 0.2s; }
-    .mob-links a:hover { color:var(--gold); }
-    .mob-foot { margin-top:44px; transform:translateY(18px); opacity:0; transition:transform 0.5s 0.25s,opacity 0.5s 0.25s; }
-    .mob-overlay.open .mob-foot { transform:none; opacity:1; }
-    .mob-foot small { font-size:0.62rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:6px; }
-    .mob-foot button { font-family:'Playfair Display',serif; font-size:1.5rem; color:var(--gold); background:none; border:none; cursor:pointer; font-style:italic; }
+/* ── CREW SIDEBAR ── */
+.crew{border-right:1px solid var(--line);background:linear-gradient(180deg,var(--bg2),var(--bg));overflow-y:auto;position:relative;z-index:10}
+.crew-hd{padding:12px 16px 8px;position:sticky;top:0;background:var(--bg2);z-index:2}
+.crew-hd .t{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:.22em;color:var(--mag);text-shadow:var(--glow-pink)}
+.crew-hd .s{font-size:9px;color:var(--faint);margin-top:3px}
+.agent{
+  padding:11px 16px;border-top:1px solid rgba(168,85,247,.1);cursor:pointer;
+  display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;transition:background .15s;position:relative;
+}
+.agent::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:transparent;transition:.15s}
+.agent:hover{background:rgba(168,85,247,.08)}
+.agent.sel{background:rgba(255,45,149,.09)}
+.agent.sel::before{background:var(--mag);box-shadow:var(--glow-pink)}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;position:relative}
+.dot.idle{background:var(--dim)}
+.dot.working{background:var(--green);box-shadow:var(--glow-green);animation:pulse 1.2s infinite}
+.dot.blocked{background:var(--red);box-shadow:0 0 10px rgba(255,77,94,.6);animation:pulse .8s infinite}
+.dot.auto{background:var(--cyan);box-shadow:var(--glow-cyan);animation:pulse 1.5s infinite}
+.a-name{font-weight:700;font-size:12.5px}
+.a-role{font-size:9.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.a-meta{text-align:right;font-size:9px;color:var(--faint);line-height:1.3}
+.a-meta .st{font-weight:600}
+.st.idle{color:var(--dim)}.st.working{color:var(--green)}.st.blocked{color:var(--red)}.st.auto{color:var(--cyan)}
 
-    /* ── HERO ── */
-    .hero { display:grid; grid-template-columns:52% 48%; min-height:100vh; }
-    .hero-l { display:flex; flex-direction:column; justify-content:flex-end; padding:160px 64px 80px 56px; position:relative; }
-    .hero-badge { display:inline-flex; align-items:center; gap:12px; font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); margin-bottom:40px; opacity:0; animation:slideUp 0.8s 0.3s ease forwards; }
-    .hero-badge::before { content:''; width:28px; height:1px; background:var(--gold); }
-    h1.ht { font-family:'Playfair Display',serif; font-size:clamp(2.8rem,5vw,5.4rem); font-weight:900; line-height:1.03; letter-spacing:-0.025em; opacity:0; animation:slideUp 0.9s 0.42s ease forwards; }
-    h1.ht em { font-style:italic; color:var(--gold); font-weight:400; }
-    .hero-sub { margin-top:28px; font-size:0.88rem; line-height:1.9; color:var(--cream2); max-width:360px; font-weight:300; opacity:0; animation:slideUp 0.9s 0.54s ease forwards; }
-    .hero-ctas { margin-top:48px; display:flex; align-items:center; gap:22px; opacity:0; animation:slideUp 0.9s 0.65s ease forwards; }
-    .btn-gold { background:var(--gold); color:var(--g0); padding:14px 34px; font-size:0.72rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; border:none; cursor:pointer; text-decoration:none; display:inline-block; transition:background 0.2s,transform 0.2s; font-family:'Inter',sans-serif; }
-    .btn-gold:hover { background:var(--gold2); transform:translateY(-2px); }
-    .ghost-btn { font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--cream2); background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:8px; transition:gap 0.2s,color 0.2s; font-family:'Inter',sans-serif; }
-    .ghost-btn:hover { gap:14px; color:var(--gold); }
-    .hero-avail { position:absolute; bottom:80px; right:0; font-size:0.62rem; opacity:0; animation:fadeIn 1s 1.2s ease forwards; }
-    .hero-r { position:relative; overflow:hidden; }
-    .hero-r::before { content:''; position:absolute; inset:0; z-index:1; background:linear-gradient(90deg,var(--g0) 0%,transparent 38%); }
-    .hero-r video, .hero-r img { width:100%; height:100%; object-fit:cover; filter:brightness(0.5) saturate(0.65); animation:zoomIn 2s cubic-bezier(0.16,1,0.3,1) forwards; }
-    .hero-r video { position:absolute; inset:0; }
-    .hero-r img { position:absolute; inset:0; }
-    .hero-tag { position:absolute; z-index:2; bottom:44px; right:40px; border:1px solid rgba(201,163,82,0.25); background:rgba(19,25,21,0.75); backdrop-filter:blur(12px); padding:18px 22px; opacity:0; animation:slideUp 0.7s 1.2s ease forwards; }
-    .hero-tag .rate { font-family:'Playfair Display',serif; font-size:1.6rem; color:var(--gold); }
-    .hero-tag .stars { color:var(--gold); font-size:0.65rem; letter-spacing:3px; margin:4px 0 2px; }
-    .hero-tag p { font-size:0.67rem; color:var(--muted); }
+/* ── CONTENT ── */
+.content{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--line);background:var(--bg2);overflow-x:auto;position:relative;z-index:10}
+.tab{
+  padding:11px 20px;font-size:11px;letter-spacing:.15em;color:var(--dim);cursor:pointer;
+  border-right:1px solid rgba(168,85,247,.12);white-space:nowrap;text-transform:uppercase;
+  transition:.15s;position:relative;background:transparent;font-family:inherit;
+}
+.tab:hover{color:var(--ink);background:rgba(168,85,247,.06)}
+.tab.on{color:var(--cyan);text-shadow:var(--glow-cyan)}
+.tab.on::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--cyan),var(--mag));box-shadow:0 0 8px rgba(34,211,238,.6)}
+.tab .badge{display:inline-block;margin-left:6px;font-size:9px;padding:1px 6px;border-radius:10px;background:rgba(168,85,247,.2);color:var(--purple)}
+.view{flex:1;overflow-y:auto;padding:20px;position:relative}
+.view-hd{margin-bottom:16px}
+.view-hd h1{font-family:'Orbitron',sans-serif;font-size:20px;letter-spacing:.03em;background:linear-gradient(90deg,var(--cyan),var(--mag));-webkit-background-clip:text;background-clip:text;color:transparent}
+.view-hd .sub{font-size:10px;color:var(--faint);margin-top:5px;letter-spacing:.05em}
 
-    /* ── MARQUEE ── */
-    .marquee { border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--g1); overflow:hidden; padding:16px 0; }
-    .marquee-track { display:flex; width:max-content; animation:marquee 26s linear infinite; }
-    .mq-item { display:flex; align-items:center; gap:20px; padding:0 36px; white-space:nowrap; font-size:0.65rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); }
-    .mq-item b { color:var(--gold); font-weight:400; font-size:0.45rem; }
+.panel{border:1px solid var(--line);border-radius:8px;background:linear-gradient(180deg,rgba(23,18,51,.55),rgba(18,14,34,.55));margin-bottom:14px;overflow:hidden}
+.panel-hd{padding:9px 14px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--purple);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.panel-bd{padding:12px 14px}
 
-    /* ── PRESS BAR ── */
-    .press { padding:44px 56px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:0; overflow:hidden; }
-    .press-label { font-size:0.6rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); white-space:nowrap; margin-right:44px; flex-shrink:0; }
-    .press-logos { display:flex; align-items:center; gap:0; flex:1; }
-    .press-logo { flex:1; text-align:center; padding:0 32px; border-right:1px solid var(--line); }
-    .press-logo:last-child { border-right:none; }
-    .press-logo span { font-family:'Playfair Display',serif; font-size:0.95rem; color:var(--cream2); opacity:0.3; letter-spacing:0.04em; font-style:italic; transition:opacity 0.2s; white-space:nowrap; }
-    .press-logo:hover span { opacity:0.7; }
+/* alert */
+.alert{border:1px solid rgba(255,77,94,.5);border-radius:8px;background:rgba(255,77,94,.08);padding:12px 14px;margin-bottom:14px;box-shadow:0 0 24px rgba(255,77,94,.12) inset}
+.alert .hd{color:var(--red);font-size:11px;letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.alert .row{font-size:11.5px;padding:6px 0;border-top:1px solid rgba(255,77,94,.18)}
+.alert .row b{color:var(--amber)}
 
-    /* ── ABOUT ── */
-    .about { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--line); }
-    .about-l { padding:120px 72px 120px 56px; border-right:1px solid var(--line); }
-    .about-l .gnum { font-family:'Playfair Display',serif; font-size:clamp(6rem,12vw,10rem); font-weight:900; line-height:0.85; color:transparent; -webkit-text-stroke:1px rgba(201,163,82,0.15); display:block; margin-bottom:36px; }
-    .about-l h2 { font-family:'Playfair Display',serif; font-size:clamp(1.6rem,2.5vw,2.2rem); font-weight:700; line-height:1.22; margin-bottom:20px; }
-    .about-l p { font-size:0.88rem; line-height:1.95; color:var(--cream2); font-weight:300; }
-    .about-r { display:flex; flex-direction:column; }
-    .a-stat { flex:1; padding:0 56px; display:flex; flex-direction:column; justify-content:center; border-bottom:1px solid var(--line); }
-    .a-stat:last-child { border-bottom:none; }
-    .a-stat .num { font-family:'Playfair Display',serif; font-size:3rem; color:var(--gold); line-height:1; }
-    .a-stat p { font-size:0.78rem; color:var(--cream2); margin-top:6px; line-height:1.6; font-weight:300; }
+/* summary strip */
+.summary{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--dim);border:1px dashed var(--line2);border-radius:8px;padding:11px 14px;margin-bottom:16px}
+.summary b{color:var(--ink)}
+.summary span{display:flex;align-items:center;gap:6px}
+.chip{padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px}
+.chip.g{background:rgba(57,255,139,.14);color:var(--green)}
+.chip.c{background:rgba(34,211,238,.14);color:var(--cyan)}
+.chip.r{background:rgba(255,77,94,.14);color:var(--red)}
+.chip.a{background:rgba(255,176,32,.14);color:var(--amber)}
 
-    /* ── BEFORE/AFTER ── */
-    .ba-section { padding:100px 56px; border-bottom:1px solid var(--line); }
-    .ba-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:48px; }
-    .ba-header h2 { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,3vw,2.6rem); font-weight:700; }
-    .ba-hint { font-size:0.7rem; color:var(--muted); letter-spacing:0.08em; }
-    .ba-slider { position:relative; height:520px; overflow:hidden; user-select:none; cursor:col-resize; border:1px solid var(--line); }
-    .ba-before, .ba-after { position:absolute; inset:0; overflow:hidden; }
-    .ba-after { right:auto; width:50%; border-right:2px solid var(--gold); }
-    .ba-before img, .ba-after img { width:100%; height:100%; object-fit:cover; filter:brightness(0.7) saturate(0.75); pointer-events:none; display:block; }
-    .ba-after img { position:absolute; top:0; left:0; height:100%; min-width:100vw; max-width:none; }
-    .ba-handle {
-      position:absolute; top:0; bottom:0; left:50%; z-index:10;
-      width:44px; transform:translateX(-50%);
-      display:flex; align-items:center; justify-content:center;
-      cursor:col-resize;
-    }
-    .ba-handle::before { content:''; position:absolute; top:0; bottom:0; left:50%; width:2px; background:var(--gold); transform:translateX(-50%); }
-    .ba-handle-btn { width:40px; height:40px; border-radius:50%; background:var(--gold); display:flex; align-items:center; justify-content:center; color:var(--g0); font-size:0.75rem; font-weight:700; box-shadow:0 4px 20px rgba(0,0,0,0.5); position:relative; z-index:1; }
-    .ba-label { position:absolute; bottom:20px; font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase; background:rgba(19,25,21,0.75); backdrop-filter:blur(6px); padding:5px 12px; border:1px solid var(--line); }
-    .ba-before .ba-label { left:20px; }
-    .ba-after .ba-label { right:20px; }
+/* task feed */
+.feed{display:flex;flex-direction:column}
+.task{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid rgba(168,85,247,.1)}
+.task:first-child{border-top:none}
+.task .who{font-weight:700;font-size:11px;color:var(--mag);min-width:56px}
+.task .desc{font-size:11.5px;color:var(--ink)}
+.task .desc .sub{font-size:9.5px;color:var(--faint)}
+.pill{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:4px;font-weight:700;white-space:nowrap}
+.pill.done{background:rgba(57,255,139,.15);color:var(--green);border:1px solid rgba(57,255,139,.35)}
+.pill.run{background:rgba(34,211,238,.15);color:var(--cyan);border:1px solid rgba(34,211,238,.35)}
+.pill.review{background:rgba(255,176,32,.15);color:var(--amber);border:1px solid rgba(255,176,32,.35)}
+.pill.block{background:rgba(255,77,94,.15);color:var(--red);border:1px solid rgba(255,77,94,.35)}
+.pill.queue{background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.35)}
 
-    /* ── EYEBROW ── */
-    .eyebrow { display:inline-flex; align-items:center; gap:12px; font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); margin-bottom:28px; }
-    .eyebrow::before { content:''; width:24px; height:1px; background:var(--gold); flex-shrink:0; }
+/* kanban */
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.col{border:1px solid var(--line);border-radius:8px;background:rgba(18,14,34,.5);display:flex;flex-direction:column;min-height:220px}
+.col-hd{padding:9px 12px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.col-hd .n{background:rgba(168,85,247,.2);border-radius:10px;padding:0 7px;font-size:9px}
+.card{margin:8px;padding:9px 10px;border-radius:6px;background:rgba(23,18,51,.7);border-left:2px solid var(--purple);font-size:11px}
+.card .who{font-size:9px;color:var(--mag);font-weight:700;letter-spacing:.05em}
+.card .t{margin-top:3px;color:var(--ink)}
+.card.g{border-left-color:var(--green)}.card.c{border-left-color:var(--cyan)}
+.card.a{border-left-color:var(--amber)}.card.r{border-left-color:var(--red)}
 
-    /* ── SERVICES ── */
-    .services { border-bottom:1px solid var(--line); }
-    .srv-header { padding:80px 56px 0; display:flex; align-items:flex-end; justify-content:space-between; padding-bottom:28px; border-bottom:1px solid var(--line); }
-    .srv-header h2 { font-family:'Playfair Display',serif; font-size:clamp(2rem,3.5vw,3rem); font-weight:700; }
-    .srv-row { display:grid; grid-template-columns:56px 1fr 1fr 1fr 160px; align-items:center; gap:24px; padding:34px 56px; border-bottom:1px solid var(--line); transition:background 0.3s; position:relative; overflow:hidden; }
-    .srv-row::after { content:''; position:absolute; left:0; top:0; bottom:0; width:0; background:rgba(201,163,82,0.04); transition:width 0.4s; }
-    .srv-row:hover::after { width:100%; }
-    .srv-row:hover .srv-img { opacity:1; transform:scale(1) rotate(0deg); }
-    .srv-row:hover .srv-num { opacity:1; color:var(--gold); }
-    .srv-num { font-family:'Playfair Display',serif; font-size:0.85rem; opacity:0.22; transition:all 0.3s; }
-    .srv-title { font-family:'Playfair Display',serif; font-size:clamp(1.2rem,2vw,1.85rem); font-weight:700; }
-    .srv-desc { font-size:0.8rem; color:var(--cream2); line-height:1.75; font-weight:300; }
-    .srv-imgbox { width:80px; height:58px; overflow:hidden; background:var(--g2); }
-    .srv-img { width:100%; height:100%; object-fit:cover; opacity:0; transform:scale(0.9) rotate(3deg); transition:opacity 0.35s,transform 0.35s; }
-    .srv-act { text-align:right; position:relative; z-index:1; }
-    .srv-btn { font-size:0.62rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--gold); background:transparent; border:1px solid rgba(201,163,82,0.28); padding:9px 16px; cursor:pointer; transition:background 0.2s,border-color 0.2s; font-family:'Inter',sans-serif; white-space:nowrap; }
-    .srv-btn:hover { background:rgba(201,163,82,0.08); border-color:var(--gold); }
+/* revenue / treasury bars */
+.big{font-family:'Orbitron',sans-serif;font-size:34px;font-weight:800}
+.big.g{color:var(--green);text-shadow:0 0 18px rgba(57,255,139,.4)}
+.big.a{color:var(--amber);text-shadow:0 0 18px rgba(255,176,32,.35)}
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:linear-gradient(180deg,rgba(23,18,51,.5),transparent)}
+.stat .l{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.stat .v{font-size:22px;font-weight:700;margin-top:4px}
+.bar-row{display:grid;grid-template-columns:96px 1fr auto;gap:12px;align-items:center;padding:7px 0;font-size:11px}
+.bar-row .nm{color:var(--dim)}
+.track{height:14px;background:rgba(168,85,247,.1);border-radius:7px;overflow:hidden;position:relative}
+.fill{height:100%;border-radius:7px;transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.fill.g{background:linear-gradient(90deg,var(--green),var(--cyan))}
+.fill.a{background:linear-gradient(90deg,var(--amber),var(--pink))}
+.fill.p{background:linear-gradient(90deg,var(--purple),var(--mag))}
+.bar-row .amt{font-weight:700;min-width:64px;text-align:right}
 
-    /* ── HORIZONTAL GALLERY ── */
-    .hgal { padding:100px 0 100px 56px; border-bottom:1px solid var(--line); overflow:hidden; }
-    .hgal-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:44px; padding-right:56px; }
-    .hgal-header h2 { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,3vw,2.6rem); font-weight:700; }
-    .hgal-hint { font-size:0.68rem; color:var(--muted); display:flex; align-items:center; gap:8px; }
-    .hgal-track { display:flex; gap:12px; overflow-x:auto; cursor:grab; padding-right:56px; scroll-snap-type:x mandatory; -ms-overflow-style:none; scrollbar-width:none; }
-    .hgal-track::-webkit-scrollbar { display:none; }
-    .hgal-track.dragging { cursor:grabbing; }
-    .hgal-cell { flex:0 0 320px; height:420px; position:relative; overflow:hidden; scroll-snap-align:start; background:var(--g2); border:1px solid var(--line); }
-    .hgal-cell img { width:100%; height:100%; object-fit:cover; filter:brightness(0.65) saturate(0.7); transition:filter 0.5s,transform 0.6s; pointer-events:none; }
-    .hgal-cell:hover img { filter:brightness(0.85) saturate(1); transform:scale(1.05); }
-    .hgal-label { position:absolute; bottom:0; left:0; right:0; padding:28px 20px 18px; background:linear-gradient(0deg,rgba(13,19,15,0.9) 0%,transparent 100%); }
-    .hgal-label h4 { font-family:'Playfair Display',serif; font-size:1.05rem; font-style:italic; }
-    .hgal-label p { font-size:0.68rem; color:var(--muted); margin-top:3px; }
-    .hgal-pill { position:absolute; top:16px; left:16px; font-size:0.58rem; letter-spacing:0.12em; text-transform:uppercase; border:1px solid rgba(201,163,82,0.3); background:rgba(13,19,15,0.65); backdrop-filter:blur(8px); color:var(--gold); padding:4px 10px; }
+/* decisions / timeline */
+.decision{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:10px;background:rgba(23,18,51,.4)}
+.decision .q{font-size:12px;margin-bottom:4px}
+.decision .who{font-size:9px;color:var(--mag);letter-spacing:.1em;text-transform:uppercase}
+.decision .acts{display:flex;gap:8px;margin-top:10px}
+.btn{font-family:inherit;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:5px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--ink);transition:.15s}
+.btn:hover{background:rgba(168,85,247,.12)}
+.btn.y{border-color:rgba(57,255,139,.5);color:var(--green)}
+.btn.y:hover{background:rgba(57,255,139,.12);box-shadow:var(--glow-green)}
+.btn.n{border-color:rgba(255,77,94,.5);color:var(--red)}
+.btn.n:hover{background:rgba(255,77,94,.12)}
+.tl{position:relative;padding-left:22px}
+.tl::before{content:'';position:absolute;left:6px;top:4px;bottom:4px;width:2px;background:linear-gradient(180deg,var(--mag),var(--cyan))}
+.tl .ev{position:relative;padding:8px 0}
+.tl .ev::before{content:'';position:absolute;left:-19px;top:12px;width:9px;height:9px;border-radius:50%;background:var(--panel);border:2px solid var(--cyan);box-shadow:var(--glow-cyan)}
+.tl .ev .ts{font-size:9px;color:var(--faint);letter-spacing:.08em}
+.tl .ev .tx{font-size:11.5px}
+.tl .ev .tx b{color:var(--mag)}
 
-    /* ── REVIEWS ── */
-    .reviews { background:var(--g1); border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:120px 56px; position:relative; overflow:hidden; }
-    .rev-bg { position:absolute; top:-40px; left:28px; font-family:'Playfair Display',serif; font-size:30rem; font-weight:900; color:rgba(201,163,82,0.025); pointer-events:none; }
-    .rev-inner { max-width:860px; margin:0 auto; position:relative; z-index:1; }
-    #rev-text { font-family:'Playfair Display',serif; font-size:clamp(1.3rem,2.6vw,2.2rem); line-height:1.5; font-style:italic; margin:36px 0; transition:opacity 0.35s,transform 0.35s; }
-    .rev-meta { display:flex; align-items:center; justify-content:space-between; }
-    .rev-who { display:flex; align-items:center; gap:16px; }
-    .rev-av { width:44px; height:44px; border-radius:50%; background:var(--gdim); border:1px solid rgba(201,163,82,0.25); display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:600; color:var(--gold); }
-    .rev-name { font-size:0.85rem; font-weight:500; }
-    .rev-stars { font-size:0.65rem; color:var(--gold); letter-spacing:3px; margin-top:3px; }
-    .rev-btns { display:flex; gap:8px; }
-    .rev-btn { width:46px; height:46px; border:1px solid rgba(201,163,82,0.2); background:transparent; color:var(--gold); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.2s,border-color 0.2s; }
-    .rev-btn:hover { background:rgba(201,163,82,0.07); border-color:var(--gold); }
+/* star chart */
+#starwrap{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:radial-gradient(circle at 50% 40%,rgba(124,58,237,.18),var(--bg) 70%);position:relative}
+#stars{display:block;width:100%}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:10px;color:var(--dim)}
+.legend span{display:flex;align-items:center;gap:6px}
+.ld{width:10px;height:10px;border-radius:50%}
 
-    /* ── INSTAGRAM ── */
-    .ig-section { padding:100px 56px; border-bottom:1px solid var(--line); }
-    .ig-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:44px; }
-    .ig-header h2 { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,3vw,2.6rem); font-weight:700; }
-    .ig-handle { font-size:0.72rem; color:var(--gold); opacity:0.7; letter-spacing:0.08em; text-decoration:none; transition:opacity 0.2s; }
-    .ig-handle:hover { opacity:1; }
-    .ig-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-    .ig-cell { position:relative; aspect-ratio:1; overflow:hidden; background:var(--g2); cursor:pointer; }
-    .ig-cell img { width:100%; height:100%; object-fit:cover; filter:brightness(0.7) saturate(0.75); transition:filter 0.4s,transform 0.5s; }
-    .ig-cell:hover img { filter:brightness(0.9) saturate(1); transform:scale(1.05); }
-    .ig-hover { position:absolute; inset:0; background:rgba(13,19,15,0.6); display:flex; align-items:center; justify-content:center; gap:20px; opacity:0; transition:opacity 0.3s; font-size:0.85rem; color:var(--cream); }
-    .ig-cell:hover .ig-hover { opacity:1; }
-    .ig-foot { margin-top:24px; text-align:center; }
-    .ig-foot a { font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--gold); text-decoration:none; opacity:0.6; transition:opacity 0.2s; }
-    .ig-foot a:hover { opacity:1; }
-
-    /* ── CONTACT ── */
-    .contact { display:grid; grid-template-columns:1fr 1fr; }
-    .contact-l { padding:120px 72px 120px 56px; border-right:1px solid var(--line); }
-    .contact-l h2 { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,3vw,2.8rem); font-weight:700; line-height:1.15; margin:18px 0 48px; }
-    .c-items { display:flex; flex-direction:column; gap:34px; }
-    .c-lbl { font-size:0.6rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); opacity:0.7; margin-bottom:5px; }
-    .c-val { font-size:0.9rem; line-height:1.6; font-weight:300; }
-    .c-val a { color:var(--cream); text-decoration:none; }
-    .contact-r { padding:120px 56px 120px 72px; }
-    .contact-r h3 { font-family:'Playfair Display',serif; font-size:1.5rem; font-style:italic; margin-bottom:40px; }
-    .f-field { margin-bottom:24px; }
-    .f-field label { display:block; font-size:0.6rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
-    .f-field input,.f-field textarea,.f-field select { width:100%; background:transparent; border:none; border-bottom:1px solid rgba(201,163,82,0.18); padding:8px 0; color:var(--cream); font-family:'Inter',sans-serif; font-size:0.88rem; font-weight:300; outline:none; transition:border-color 0.25s; appearance:none; }
-    .f-field input:focus,.f-field textarea:focus,.f-field select:focus { border-color:var(--gold); }
-    .f-field textarea { resize:none; height:76px; }
-    .f-field select option { background:var(--g0); }
-    .f-row { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
-    .f-submit { margin-top:40px; display:flex; align-items:center; gap:18px; }
-    .f-note { font-size:0.66rem; color:var(--muted); }
-
-    /* ── FOOTER ── */
-    footer { background:#0d1210; border-top:1px solid var(--line); padding:52px 56px; display:flex; align-items:center; justify-content:space-between; }
-    .ft-brand { font-family:'Playfair Display',serif; font-size:1rem; color:var(--gold); }
-    .ft-brand small { font-family:'Inter',sans-serif; display:block; font-size:0.66rem; color:var(--muted); margin-top:4px; font-weight:300; }
-    .ft-links { display:flex; gap:32px; }
-    .ft-links a { font-size:0.66rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--cream); opacity:0.28; text-decoration:none; transition:opacity 0.2s; }
-    .ft-links a:hover { opacity:0.8; }
-    .ft-r { text-align:right; font-size:0.65rem; color:var(--muted); }
-    .ft-r a { display:block; margin-top:8px; font-size:0.6rem; color:var(--gold); opacity:0.4; text-decoration:none; letter-spacing:0.1em; text-transform:uppercase; transition:opacity 0.2s; }
-    .ft-r a:hover { opacity:1; }
-
-    /* ── MODALS ── */
-    .modal-backdrop { position:fixed; inset:0; z-index:800; background:rgba(13,19,15,0.86); backdrop-filter:blur(14px); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.3s; padding:20px; }
-    .modal-backdrop.open { opacity:1; pointer-events:all; }
-    .modal { background:var(--g1); border:1px solid var(--line); width:100%; transform:translateY(22px) scale(0.97); transition:transform 0.35s cubic-bezier(0.34,1.5,0.64,1),opacity 0.3s; opacity:0; position:relative; }
-    .modal-backdrop.open .modal { transform:none; opacity:1; }
-    .modal-x { position:absolute; top:18px; right:20px; background:none; border:none; color:var(--muted); font-size:1.1rem; cursor:pointer; transition:color 0.2s; }
-    .modal-x:hover { color:var(--cream); }
-
-    /* phone modal */
-    #phone-modal .modal { max-width:400px; text-align:center; padding:52px 44px 44px; }
-    .ph-icon { font-size:2.2rem; margin-bottom:18px; }
-    .ph-num { font-family:'Playfair Display',serif; font-size:2.1rem; color:var(--gold); margin-bottom:4px; }
-    .ph-biz { font-size:0.76rem; color:var(--muted); margin-bottom:24px; }
-    .ph-div { width:36px; height:1px; background:var(--line); margin:0 auto 24px; }
-    .ph-hours p { font-size:0.78rem; color:var(--cream2); line-height:2.1; margin-bottom:28px; }
-    .copy-btn { width:100%; background:var(--gold); color:var(--g0); border:none; padding:13px; font-family:'Inter',sans-serif; font-size:0.72rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; transition:background 0.2s; margin-bottom:10px; }
-    .copy-btn:hover { background:var(--gold2); }
-    .copy-btn.ok { background:#3a7c54; color:#fff; }
-    .ph-note { font-size:0.66rem; color:var(--muted); }
-
-    /* service modal */
-    #srv-modal .modal { max-width:540px; padding:44px; }
-    #srv-modal h3 { font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:700; margin:10px 0 32px; }
-    .sm-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-
-    /* ── REVEAL ── */
-    .r { opacity:0; transform:translateY(26px); transition:opacity 0.7s ease,transform 0.7s ease; }
-    .r.v { opacity:1; transform:none; }
-
-    /* ── KEYFRAMES ── */
-    @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
-    @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
-    @keyframes zoomIn  { from{transform:scale(1.12)} to{transform:scale(1)} }
-    @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-
-    /* ── RESPONSIVE ── */
-    @media(max-width:1024px){
-      .hero{grid-template-columns:1fr;min-height:auto}
-      .hero-r{height:58vw}
-      .hero-r::before{background:linear-gradient(0deg,var(--g0) 0%,transparent 55%)}
-      .hero-l{padding:110px 36px 60px}
-      .about{grid-template-columns:1fr}
-      .about-l{border-right:none;border-bottom:1px solid var(--line);padding:80px 36px}
-      .about-r{flex-direction:row}
-      .a-stat{border-bottom:none;border-right:1px solid var(--line);padding:40px 32px}
-      .a-stat:last-child{border-right:none}
-      .srv-row{grid-template-columns:44px 1fr 1fr 120px}
-      .srv-imgbox{display:none}
-      .press{padding:32px 36px}
-      .press-logo{padding:0 18px}
-      .ba-section{padding:72px 36px}
-      .hgal{padding:80px 0 80px 36px}
-      .ig-section{padding:72px 36px}
-      .ig-grid{grid-template-columns:repeat(2,1fr)}
-      .contact{grid-template-columns:1fr}
-      .contact-l{border-right:none;border-bottom:1px solid var(--line);padding:80px 36px}
-      .contact-r{padding:60px 36px 80px}
-      footer{flex-direction:column;gap:28px;text-align:center}
-      .ft-links{flex-wrap:wrap;justify-content:center}
-      .ft-r{text-align:center}
-    }
-    @media(max-width:768px){
-      nav{padding:20px 24px}
-      nav.scrolled{padding:14px 24px}
-      .nav-links{display:none}
-      .hamburger{display:flex}
-      .hero-l{padding:88px 24px 48px}
-      .srv-header{padding:56px 24px 24px;flex-direction:column;align-items:flex-start;gap:12px}
-      .srv-row{grid-template-columns:40px 1fr 100px;gap:10px;padding:26px 24px}
-      .srv-desc{display:none}
-      .ba-section{padding:56px 24px}
-      .ba-slider{height:320px}
-      .hgal-track{padding-right:24px}
-      .hgal-cell{flex:0 0 260px;height:340px}
-      .ig-grid{grid-template-columns:repeat(3,1fr)}
-      .press{flex-direction:column;align-items:flex-start;gap:20px;padding:28px 24px}
-      .press-logos{flex-wrap:wrap}
-      .press-logo{flex:1 1 40%;border-right:none;text-align:left;padding:6px 0}
-      .sm-row{grid-template-columns:1fr}
-      footer{padding:36px 24px}
-      .wa-fab{bottom:20px;right:20px;width:50px;height:50px}
-    }
-  </style>
+.empty{color:var(--faint);font-size:11px;text-align:center;padding:30px}
+.hidden{display:none!important}
+@media(max-width:860px){
+  .main{grid-template-columns:1fr}
+  .crew{display:none}
+  .board{grid-template-columns:1fr 1fr}
+}
+</style>
 </head>
 <body>
+<div class="scan"></div>
 
-<!-- LOADER -->
-<div id="loader">
-  <div class="ld-logo">Michaels Floristenwerkstatt</div>
-  <div class="ld-sub">Landstuhl · Floristik</div>
-  <div class="ld-track"><div class="ld-bar"></div></div>
-</div>
+<!-- BOOT SEQUENCE -->
+<div id="boot"><div class="bootbox">
+  <div class="bt">MISSION CONTROL</div>
+  <div id="bootlog"></div>
+</div></div>
 
-<!-- CURSOR -->
-<div id="rose">🌹</div>
-<div id="trail"></div>
-
-<!-- WHATSAPP FAB -->
-<a class="wa-fab" href="https://wa.me/4917685911586?text=Hallo%2C%20ich%20interessiere%20mich%20f%C3%BCr%20Ihre%20Floristik." target="_blank" rel="noopener" title="WhatsApp">
-  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-</a>
-
-<!-- MOBILE MENU -->
-<div class="mob-overlay" id="mob-menu">
-  <ul class="mob-links">
-    <li><a href="#leistungen" onclick="closeMenu()">Leistungen</a></li>
-    <li><a href="#galerie" onclick="closeMenu()">Galerie</a></li>
-    <li><a href="#kontakt" onclick="closeMenu()">Kontakt</a></li>
-    <li><a href="#" onclick="closeMenu();openPhone();return false;">Anrufen</a></li>
-  </ul>
-  <div class="mob-foot">
-    <small>Telefon</small>
-    <button onclick="closeMenu();openPhone()">0176 85911586</button>
-  </div>
-</div>
-
-<!-- NAV -->
-<nav id="nav">
-  <a class="nav-logo" href="#">M. Floristenwerkstatt</a>
-  <ul class="nav-links">
-    <li><a href="#leistungen">Leistungen</a></li>
-    <li><a href="#galerie">Galerie</a></li>
-    <li><a href="#kontakt">Kontakt</a></li>
-    <li><div class="live-dot" id="avail-dot"><span></span> <span id="avail-txt"></span></div></li>
-    <li><button class="nav-cta" onclick="openPhone()">0176 85911586</button></li>
-  </ul>
-  <button class="hamburger" id="hbg" onclick="toggleMenu()"><span></span><span></span><span></span></button>
-</nav>
-
-<!-- HERO -->
-<section class="hero" id="home">
-  <div class="hero-l">
-    <div class="hero-badge">Floristik · Landstuhl</div>
-    <h1 class="ht">Florales<br/>für Ihre<br/><em>besonderen</em><br/>Momente.</h1>
-    <p class="hero-sub">Handgefertigte Arrangements für Hochzeiten, Feiern und Trauerfälle — mit Sorgfalt und Können, das man spürt.</p>
-    <div class="hero-ctas">
-      <button class="btn-gold" onclick="openPhone()">Jetzt Bestellen</button>
-      <button class="ghost-btn" onclick="document.getElementById('leistungen').scrollIntoView({behavior:'smooth'})">Leistungen entdecken →</button>
-    </div>
-    <div class="hero-avail"><div class="live-dot" id="hero-avail"><span></span> <span id="hero-avail-txt"></span></div></div>
-  </div>
-  <div class="hero-r" id="hero-r">
-    <video autoplay muted loop playsinline id="hero-vid" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(0.5) saturate(0.65)">
-      <source src="https://assets.mixkit.co/videos/preview/mixkit-woman-arranging-flowers-in-a-shop-window-4612-large.mp4" type="video/mp4">
-    </video>
-    <img id="hero-img" src="https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=1400&q=85&auto=format&fit=crop" alt="Florales Arrangement" onerror="this.style.display='none'" />
-    <div class="hero-tag">
-      <div class="rate">4.8</div>
-      <div class="stars">★★★★★</div>
-      <p>32 Google Bewertungen</p>
-    </div>
-  </div>
-</section>
-
-<!-- MARQUEE -->
-<div class="marquee">
-  <div class="marquee-track">
-    <div class="mq-item">Hochzeitsfloristik <b>✦</b></div>
-    <div class="mq-item">Eventdekoration <b>✦</b></div>
-    <div class="mq-item">Trauerfloristik <b>✦</b></div>
-    <div class="mq-item">Tischgestecke <b>✦</b></div>
-    <div class="mq-item">Brautsträuße <b>✦</b></div>
-    <div class="mq-item">Kirchenschmuck <b>✦</b></div>
-    <div class="mq-item">Premium Rosen <b>✦</b></div>
-    <div class="mq-item">Saisonale Blumen <b>✦</b></div>
-    <div class="mq-item">Hochzeitsfloristik <b>✦</b></div>
-    <div class="mq-item">Eventdekoration <b>✦</b></div>
-    <div class="mq-item">Trauerfloristik <b>✦</b></div>
-    <div class="mq-item">Tischgestecke <b>✦</b></div>
-    <div class="mq-item">Brautsträuße <b>✦</b></div>
-    <div class="mq-item">Kirchenschmuck <b>✦</b></div>
-    <div class="mq-item">Premium Rosen <b>✦</b></div>
-    <div class="mq-item">Saisonale Blumen <b>✦</b></div>
-  </div>
-</div>
-
-<!-- PRESS -->
-<div class="press r">
-  <div class="press-label">Bekannt aus</div>
-  <div class="press-logos">
-    <div class="press-logo"><span>Die Rheinpfalz</span></div>
-    <div class="press-logo"><span>Pfälzischer Merkur</span></div>
-    <div class="press-logo"><span>WochenSpiegel</span></div>
-    <div class="press-logo"><span>Landstuhl.de</span></div>
-  </div>
-</div>
-
-<!-- ABOUT -->
-<div class="about">
-  <div class="about-l r">
-    <span class="gnum">4.8</span>
-    <h2>Floristik ist kein<br/>Beruf. Es ist Berufung.</h2>
-    <p>Bei Michaels Floristenwerkstatt entstehen Arrangements, die Emotionen tragen — vom ersten Entwurf bis zum fertigen Strauß. Jede Komposition ist das Ergebnis echter Leidenschaft und handwerklicher Sorgfalt.</p>
-  </div>
-  <div class="about-r">
-    <div class="a-stat r"><div class="num">32</div><p>Verifizierte Google-Bewertungen von echten Kunden</p></div>
-    <div class="a-stat r"><div class="num">100%</div><p>Handgefertigte Arrangements — kein Template, kein Fließband</p></div>
-    <div class="a-stat r"><div class="num">Tägl.</div><p>Frische Blumenlieferung für maximale Qualität</p></div>
-  </div>
-</div>
-
-<!-- BEFORE / AFTER -->
-<div class="ba-section r">
-  <div class="ba-header">
-    <div>
-      <div class="eyebrow">Vorher & Nachher</div>
-      <h2>Vom Rohmaterial zum Kunstwerk</h2>
-    </div>
-    <div class="ba-hint">← Ziehen zum Vergleichen →</div>
-  </div>
-  <div class="ba-slider" id="ba">
-    <div class="ba-before">
-      <img src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1200&q=80&auto=format" alt="Vorher" onerror="this.style.display='none'" />
-      <div class="ba-label">Rohblumen</div>
-    </div>
-    <div class="ba-after" id="ba-after">
-      <img src="https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=1200&q=80&auto=format" alt="Nachher" onerror="this.style.display='none'" />
-      <div class="ba-label" style="right:20px;left:auto">Fertiges Arrangement</div>
-    </div>
-    <div class="ba-handle" id="ba-handle">
-      <div class="ba-handle-btn">⟺</div>
-    </div>
-  </div>
-</div>
-
-<!-- SERVICES -->
-<section id="leistungen" class="services">
-  <div class="srv-header r">
-    <div class="eyebrow">Leistungen</div>
-    <h2>Was wir anbieten</h2>
-  </div>
-  <div class="srv-row r">
-    <span class="srv-num">01</span>
-    <div class="srv-title">Hochzeiten</div>
-    <div class="srv-desc">Brautsträuße, Tischdekorationen, Kirchenschmuck — alles aus einer Hand, für Ihren schönsten Tag.</div>
-    <div class="srv-imgbox"><img class="srv-img" src="https://images.unsplash.com/photo-1519741497674-611481863552?w=200&q=70&auto=format" alt="" onerror="this.parentElement.style.display='none'" /></div>
-    <div class="srv-act"><button class="srv-btn" onclick="openService('Hochzeit')">Anfrage stellen</button></div>
-  </div>
-  <div class="srv-row r">
-    <span class="srv-num">02</span>
-    <div class="srv-title">Events & Feiern</div>
-    <div class="srv-desc">Geburtstage, Jubiläen, Firmenanlässe — florale Atmosphären, die Ihre Gäste begeistern.</div>
-    <div class="srv-imgbox"><img class="srv-img" src="https://images.unsplash.com/photo-1490750967868-88df5691cc5f?w=200&q=70&auto=format" alt="" onerror="this.parentElement.style.display='none'" /></div>
-    <div class="srv-act"><button class="srv-btn" onclick="openService('Event / Feier')">Anfrage stellen</button></div>
-  </div>
-  <div class="srv-row r">
-    <span class="srv-num">03</span>
-    <div class="srv-title">Trauerfloristik</div>
-    <div class="srv-desc">Mit Würde und Einfühlungsvermögen — Kränze, Gestecke und Sargschmuck als würdiger Abschied.</div>
-    <div class="srv-imgbox"><img class="srv-img" src="https://images.unsplash.com/photo-1487530811015-6780399e5c6e?w=200&q=70&auto=format" alt="" onerror="this.parentElement.style.display='none'" /></div>
-    <div class="srv-act"><button class="srv-btn" onclick="openService('Trauerfall')">Anfrage stellen</button></div>
-  </div>
-  <div class="srv-row r">
-    <span class="srv-num">04</span>
-    <div class="srv-title">Einzelsträuße</div>
-    <div class="srv-desc">Saisonal, frisch, handgebunden — zum Geburtstag, als Dankeschön, oder einfach so.</div>
-    <div class="srv-imgbox"><img class="srv-img" src="https://images.unsplash.com/photo-1455659817273-f96807779a8a?w=200&q=70&auto=format" alt="" onerror="this.parentElement.style.display='none'" /></div>
-    <div class="srv-act"><button class="srv-btn" onclick="openService('Geburtstagsstrauß')">Anfrage stellen</button></div>
-  </div>
-</section>
-
-<!-- HORIZONTAL GALLERY -->
-<section id="galerie" class="hgal">
-  <div class="hgal-header r">
-    <div>
-      <div class="eyebrow">Galerie</div>
-      <h2>Unsere Kreationen</h2>
-    </div>
-    <div class="hgal-hint">⟵ Ziehen zum Scrollen ⟶</div>
-  </div>
-  <div class="hgal-track r" id="hgal-track">
-    <div class="hgal-cell">
-      <div class="hgal-pill">Featured</div>
-      <img src="https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=700&q=80&auto=format" alt="" onerror="this.style.display='none'" />
-      <div class="hgal-label"><h4>Signature Arrangement</h4><p>Handgefertigt · Unikat</p></div>
-    </div>
-    <div class="hgal-cell">
-      <img src="https://images.unsplash.com/photo-1487530811015-6780399e5c6e?w=700&q=80&auto=format" alt="" onerror="this.style.display='none'" />
-      <div class="hgal-label"><h4>Premium Rosen</h4><p>Täglich frisch</p></div>
-    </div>
-    <div class="hgal-cell">
-      <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=700&q=80&auto=format" alt="" onerror="this.style.display='none'" />
-      <div class="hgal-label"><h4>Hochzeitsfloristik</h4><p>Maßgeschneidert</p></div>
-    </div>
-    <div class="hgal-cell">
-      <img src="https://images.unsplash.com/photo-1490750967868-88df5691cc5f?w=700&q=80&auto=format" alt="" onerror="this.style.display='none'" />
-      <div class="hgal-label"><h4>Saisonale Blumen</h4><p>Immer aktuell</p></div>
-    </div>
-    <div class="hgal-cell">
-      <img src="https://images.unsplash.com/photo-1455659817273-f96807779a8a?w=700&q=80&auto=format" alt="" onerror="this.style.display='none'" />
-      <div class="hgal-label"><h4>Rosenkomposition</h4><p>Klassisch & elegant</p></div>
-    </div>
-    <div class="hgal-cell">
-      <img src="https://images.unsplash.com/photo-1461354464878-ad92f492a5a0?w=700&q=80&auto=format" alt="" onerror="this.style.display='none'" />
-      <div class="hgal-label"><h4>Wildblumen</h4><p>Natürlich & leicht</p></div>
-    </div>
-    <div class="hgal-cell">
-      <img src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=700&q=80&auto=format" alt="" onerror="this.style.display='none'" />
-      <div class="hgal-label"><h4>Brautstrauß</h4><p>Für Ihren schönsten Tag</p></div>
-    </div>
-    <div class="hgal-cell">
-      <img src="https://images.unsplash.com/photo-1444930694458-01babf71870c?w=700&q=80&auto=format" alt="" onerror="this.style.display='none'" />
-      <div class="hgal-label"><h4>Eventdekoration</h4><p>Für jeden Anlass</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- REVIEWS -->
-<section class="reviews">
-  <div class="rev-bg">"</div>
-  <div class="rev-inner r">
-    <div class="eyebrow">Kundenstimmen</div>
-    <div id="rev-text">„Absolut begeistert. Die Blumenarrangements für unsere Hochzeit waren traumhaft schön. Jedes Detail wurde mit so viel Liebe gestaltet — wir hätten uns nichts Schöneres vorstellen können."</div>
-    <div class="rev-meta">
-      <div class="rev-who">
-        <div class="rev-av" id="rev-av">RA</div>
-        <div><div class="rev-name" id="rev-name">Ru Ar</div><div class="rev-stars">★★★★★</div></div>
-      </div>
-      <div class="rev-btns">
-        <button class="rev-btn" onclick="changeRev(-1)">←</button>
-        <button class="rev-btn" onclick="changeRev(1)">→</button>
+<div id="app">
+  <!-- TOP COMMAND BAR -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="pulse"></span>
+      <div>
+        <div class="logo">MISSION CONTROL</div>
+        <div class="ver">AGENT OPS · v6</div>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- INSTAGRAM -->
-<section class="ig-section">
-  <div class="ig-header r">
-    <div>
-      <div class="eyebrow">Instagram</div>
-      <h2>Folgen Sie uns</h2>
+    <div class="kpis" id="kpis"></div>
+    <div class="clock">
+      <div class="t" id="clock">--:--:--</div>
+      <div class="z">UTC · LIVE</div>
     </div>
-    <a class="ig-handle" href="#" target="_blank">@michaels.floristenwerkstatt ↗</a>
-  </div>
-  <div class="ig-grid r">
-    <div class="ig-cell"><img src="https://images.unsplash.com/photo-1487530811015-6780399e5c6e?w=400&q=75&auto=format" alt="" onerror="this.parentElement.style.display='none'" /><div class="ig-hover"><span>❤️ 84</span><span>💬 7</span></div></div>
-    <div class="ig-cell"><img src="https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400&q=75&auto=format" alt="" onerror="this.parentElement.style.display='none'" /><div class="ig-hover"><span>❤️ 127</span><span>💬 12</span></div></div>
-    <div class="ig-cell"><img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=75&auto=format" alt="" onerror="this.parentElement.style.display='none'" /><div class="ig-hover"><span>❤️ 203</span><span>💬 18</span></div></div>
-    <div class="ig-cell"><img src="https://images.unsplash.com/photo-1490750967868-88df5691cc5f?w=400&q=75&auto=format" alt="" onerror="this.parentElement.style.display='none'" /><div class="ig-hover"><span>❤️ 66</span><span>💬 4</span></div></div>
-    <div class="ig-cell"><img src="https://images.unsplash.com/photo-1455659817273-f96807779a8a?w=400&q=75&auto=format" alt="" onerror="this.parentElement.style.display='none'" /><div class="ig-hover"><span>❤️ 91</span><span>💬 9</span></div></div>
-    <div class="ig-cell"><img src="https://images.unsplash.com/photo-1461354464878-ad92f492a5a0?w=400&q=75&auto=format" alt="" onerror="this.parentElement.style.display='none'" /><div class="ig-hover"><span>❤️ 54</span><span>💬 3</span></div></div>
-  </div>
-  <div class="ig-foot"><a href="#" target="_blank">Alle Beiträge auf Instagram ansehen ↗</a></div>
-</section>
+  </header>
 
-<!-- CONTACT -->
-<section id="kontakt" class="contact">
-  <div class="contact-l r">
-    <div class="eyebrow">Kontakt</div>
-    <h2>Lassen Sie uns Ihre Idee besprechen.</h2>
-    <div class="c-items">
-      <div><div class="c-lbl">Adresse</div><div class="c-val">Am Alten Markt 9<br/>66849 Landstuhl, Deutschland</div></div>
-      <div><div class="c-lbl">Telefon</div><div class="c-val"><a href="#" onclick="openPhone();return false;">0176 85911586</a></div></div>
-      <div><div class="c-lbl">WhatsApp</div><div class="c-val"><a href="https://wa.me/4917685911586" target="_blank">Nachricht senden ↗</a></div></div>
-      <div><div class="c-lbl">Öffnungszeiten</div><div class="c-val">Mo – Fr: 08:00 – 18:00 Uhr<br/>Samstag: 09:00 – 14:00 Uhr</div></div>
+  <div class="main">
+    <!-- CREW -->
+    <aside class="crew">
+      <div class="crew-hd">
+        <div class="t">CREW</div>
+        <div class="s">autonomous agents · <span id="crewCount">0</span> online</div>
+      </div>
+      <div id="crewList"></div>
+    </aside>
+
+    <!-- CONTENT -->
+    <section class="content">
+      <nav class="tabs" id="tabs"></nav>
+      <div class="view" id="view"></div>
+    </section>
+  </div>
+
+  <!-- FOOTER TICKER -->
+  <footer class="footer">
+    <div class="lab">◉ LIVE FEED</div>
+    <div class="ticker"><div class="track" id="ticker"></div></div>
+    <div class="links">
+      <a href="shop.html">Florist Shop</a>
+      <a href="admin.html">Admin</a>
     </div>
-  </div>
-  <div class="contact-r r">
-    <h3>Anfrage stellen</h3>
-    <form onsubmit="submitContact(event)">
-      <div class="f-row">
-        <div class="f-field"><label>Name</label><input type="text" id="cf-name" placeholder="Ihr Name" required maxlength="100" /></div>
-        <div class="f-field"><label>Telefon</label><input type="tel" id="cf-phone" placeholder="Ihre Nummer" maxlength="30" /></div>
-      </div>
-      <div class="f-field"><label>Anlass</label><select id="cf-occasion"><option value="">Bitte wählen</option><option>Hochzeit</option><option>Event / Feier</option><option>Trauerfall</option><option>Geburtstagsstrauß</option><option>Sonstiges</option></select></div>
-      <div class="f-field"><label>Ihre Wünsche</label><textarea id="cf-msg" placeholder="Erzählen Sie uns von Ihrem Wunsch..." maxlength="800"></textarea></div>
-      <div class="f-submit">
-        <button type="submit" class="btn-gold" id="cf-btn">Absenden</button>
-        <span class="f-note">Wir melden uns innerhalb von 24 Stunden.</span>
-      </div>
-    </form>
-  </div>
-</section>
-
-<!-- MAP -->
-<div style="border-top:1px solid var(--line)">
-  <iframe src="https://maps.google.com/maps?q=Am%20Alten%20Markt%209%2C%2066849%20Landstuhl&t=&z=16&ie=UTF8&iwloc=&output=embed" style="width:100%;height:360px;border:none;filter:brightness(0.7) grayscale(0.3)" loading="lazy" allowfullscreen></iframe>
-</div>
-
-<!-- FOOTER -->
-<footer>
-  <div class="ft-brand">Michaels Floristenwerkstatt<small>Am Alten Markt 9 · 66849 Landstuhl</small></div>
-  <div class="ft-links">
-    <a href="#leistungen">Leistungen</a>
-    <a href="#galerie">Galerie</a>
-    <a href="#kontakt">Kontakt</a>
-    <a href="#" onclick="openPhone();return false;">Anrufen</a>
-  </div>
-  <div class="ft-r">© 2025 Michaels Floristenwerkstatt<a href="admin.html">Admin ↗</a></div>
-</footer>
-
-<!-- PHONE MODAL -->
-<div class="modal-backdrop" id="phone-modal" onclick="if(event.target===this)closeModal('phone-modal')">
-  <div class="modal" style="max-width:400px;text-align:center;padding:52px 44px 44px">
-    <button class="modal-x" onclick="closeModal('phone-modal')">✕</button>
-    <div class="ph-icon">📞</div>
-    <div class="ph-num">0176 85911586</div>
-    <div class="ph-biz">Michaels Floristenwerkstatt · Landstuhl</div>
-    <div class="ph-div"></div>
-    <div class="ph-hours">
-      <p>Montag – Freitag: 08:00 – 18:00 Uhr<br/>Samstag: 09:00 – 14:00 Uhr<br/>Sonn- & Feiertage: Geschlossen</p>
-    </div>
-    <button class="copy-btn" id="copy-btn" onclick="copyNum()">Nummer kopieren</button>
-    <div class="ph-note">Oder schreiben Sie uns auf WhatsApp.</div>
-  </div>
-</div>
-
-<!-- SERVICE MODAL -->
-<div class="modal-backdrop" id="srv-modal" onclick="if(event.target===this)closeModal('srv-modal')">
-  <div class="modal" style="max-width:540px;padding:44px">
-    <button class="modal-x" onclick="closeModal('srv-modal')">✕</button>
-    <div class="eyebrow" id="sm-label" style="margin-bottom:8px">Anfrage</div>
-    <h3 id="sm-title" style="font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:700;margin-bottom:32px">Anfrage stellen</h3>
-    <form onsubmit="submitService(event)">
-      <div class="sm-row">
-        <div class="f-field"><label>Name</label><input type="text" id="sm-name" required maxlength="100" placeholder="Ihr Name" /></div>
-        <div class="f-field"><label>Telefon</label><input type="tel" id="sm-phone" maxlength="30" placeholder="Ihre Nummer" /></div>
-      </div>
-      <div class="f-field"><label>Gewünschtes Datum</label><input type="date" id="sm-date" /></div>
-      <div class="f-field"><label>Nachricht</label><textarea id="sm-msg" maxlength="800" placeholder="Beschreiben Sie Ihren Wunsch..." style="resize:none;height:80px"></textarea></div>
-      <input type="hidden" id="sm-occasion" />
-      <div style="margin-top:32px"><button type="submit" class="btn-gold" id="sm-btn">Anfrage senden</button></div>
-    </form>
-  </div>
+  </footer>
 </div>
 
 <script>
-  // ── LOADER ──
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      const ld = document.getElementById('loader');
-      ld.classList.add('out');
-      setTimeout(() => ld.remove(), 800);
-    }, 1500);
-  });
+/* ══════════════════════════════════════════════════════════════════
+   ▓▓ EDIT YOUR AGENTS HERE ▓▓
+   This whole dashboard is driven from the arrays below. Replace these
+   demo agents with your own — id/name/role/mode/status — and everything
+   (crew list, focus feed, factory, star chart, KPIs) updates itself.
+     mode:   'event' (fires on task) | 'scheduled' (cycle N s) | 'auto'
+     status: 'idle' | 'working' | 'blocked' | 'auto'
+   ══════════════════════════════════════════════════════════════════ */
 
-  // ── CURSOR ──
-  const rose = document.getElementById('rose'), trail = document.getElementById('trail');
-  let cx=0,cy=0,tx=0,ty=0;
-  document.addEventListener('mousemove', e => { cx=e.clientX; cy=e.clientY; rose.style.left=cx+'px'; rose.style.top=cy+'px'; });
-  (function anim(){ tx+=(cx-tx)*0.14; ty+=(cy-ty)*0.14; trail.style.left=tx+'px'; trail.style.top=ty+'px'; requestAnimationFrame(anim); })();
-  document.querySelectorAll('a,button,.srv-row,.hgal-cell,.ig-cell,.ba-slider').forEach(el => {
-    el.addEventListener('mouseenter', ()=>rose.classList.add('big'));
-    el.addEventListener('mouseleave', ()=>rose.classList.remove('big'));
-  });
+const AGENTS = [
+  {id:'matt',   name:'Matt',    role:'Operations Manager',   mode:'scheduled', status:'idle',    cycle:7,  note:'Awaiting orders'},
+  {id:'finn',   name:'Finn',    role:'Fiverr Fulfillment',   mode:'event',     status:'working', note:'Delivering gig #4471'},
+  {id:'dennis', name:'Dennis',  role:'Research & Strategy',  mode:'event',     status:'idle',    note:'Awaiting orders'},
+  {id:'phun',   name:'Phun',    role:'YouTube AI Music',     mode:'event',     status:'blocked', note:'OAuth + Suno key missing'},
+  {id:'buno',   name:'Buno',    role:'Etsy Executor',        mode:'event',     status:'working', note:'Listing 12 products'},
+  {id:'luke',   name:'Luke',    role:'TikTok Marketing',     mode:'event',     status:'idle',    note:'Awaiting orders'},
+  {id:'mav',    name:'Maverick',role:'Autonomous Experiment',mode:'auto',      status:'auto',    note:'Running experiment'},
+];
 
-  // ── NAV SCROLL ──
-  window.addEventListener('scroll', () => {
-    document.getElementById('nav').classList.toggle('scrolled', scrollY > 50);
-  });
+const BLOCKERS = [
+  {who:'Phun', txt:'YouTube channel + OAuth not configured', need:'Suno API key not deployed'},
+];
 
-  // ── PARALLAX ──
-  window.addEventListener('scroll', () => {
-    const r = document.getElementById('hero-r');
-    if (r) { const img = r.querySelector('video') || r.querySelector('img'); if(img) img.style.transform = `translateY(${scrollY * 0.25}px) scale(1)`; }
-  });
+let TASKS = [
+  {who:'Finn',   st:'run',    t:'Fulfill Fiverr order #4471', sub:'logo pack · 3 concepts'},
+  {who:'Buno',   st:'run',    t:'Publish Etsy listing "Sunset Print"', sub:'pricing + SEO tags'},
+  {who:'Dennis', st:'review', t:'Q3 niche report ready for review', sub:'skilled-trades occupation'},
+  {who:'Maverick',st:'run',   t:'A/B test 2 ad hooks', sub:'autonomous · budget $5'},
+  {who:'Luke',   st:'done',   t:'Scheduled 4 TikToks', sub:'do NOT fall behind'},
+  {who:'Buno',   st:'done',   t:'Repriced 18 SKUs', sub:'margin +6%'},
+  {who:'Matt',   st:'done',   t:'Daily standup synced', sub:'7 agents polled'},
+  {who:'Phun',   st:'block',  t:'Upload track "Neon Rain"', sub:'blocked · OAuth'},
+  {who:'Dennis', st:'queue',  t:'Draft competitor teardown', sub:'queued'},
+];
 
-  // ── VIDEO FALLBACK ──
-  const vid = document.getElementById('hero-vid');
-  if (vid) vid.addEventListener('error', () => { vid.style.display='none'; });
+const DECISIONS = [
+  {who:'Buno',   q:'Kill Etsy listing "Vintage Poster" — 0 sales in 30d, $0.40/day ad spend. Cut it?'},
+  {who:'Maverick',q:'Reallocate $15 from paused YouTube budget into TikTok ads?'},
+  {who:'Finn',   q:'Accept rush gig at 1.5× rate? Delivery in 6h, tight but doable.'},
+];
 
-  // ── LIVE AVAILABILITY ──
-  function setAvail() {
-    const now = new Date();
-    const day = now.getDay(); // 0=Sun,6=Sat
-    const h = now.getHours(), m = now.getMinutes();
-    const mins = h*60+m;
-    let open = false;
-    if (day >= 1 && day <= 5 && mins >= 480 && mins < 1080) open = true;
-    if (day === 6 && mins >= 540 && mins < 840) open = true;
-    const dots = document.querySelectorAll('.live-dot');
-    const txts = [document.getElementById('avail-txt'), document.getElementById('hero-avail-txt')];
-    dots.forEach(d => d.classList.toggle('closed', !open));
-    txts.forEach(t => { if(t) t.textContent = open ? 'Heute geöffnet' : 'Momentan geschlossen'; });
-  }
-  setAvail(); setInterval(setAvail, 60000);
+const REVENUE = [
+  {src:'Fiverr',  amt:1324.30, c:'g'},
+  {src:'Etsy',    amt:  612.18, c:'g'},
+  {src:'TikTok Shop', amt:198.90, c:'p'},
+  {src:'Whatapviptht', amt:80.60, c:'p'},
+];
 
-  // ── HAMBURGER ──
-  let menuOpen = false;
-  function toggleMenu() { menuOpen=!menuOpen; document.getElementById('hbg').classList.toggle('open',menuOpen); document.getElementById('mob-menu').classList.toggle('open',menuOpen); document.body.style.overflow=menuOpen?'hidden':''; }
-  function closeMenu() { menuOpen=false; document.getElementById('hbg').classList.remove('open'); document.getElementById('mob-menu').classList.remove('open'); document.body.style.overflow=''; }
+const SPEND = [
+  {src:'Finn',    amt:12.42, c:'a'},
+  {src:'Dennis',  amt: 8.99, c:'a'},
+  {src:'Maverick',amt: 5.05, c:'a'},
+  {src:'Buno',    amt: 4.07, c:'a'},
+  {src:'Luke',    amt: 3.30, c:'a'},
+  {src:'Phun',    amt: 0.00, c:'a'},
+];
 
-  // ── REVEAL ──
-  const ro = new IntersectionObserver(entries => entries.forEach((e,i)=>{ if(e.isIntersecting){setTimeout(()=>e.target.classList.add('v'),i*70); ro.unobserve(e.target);} }), {threshold:0.08});
-  document.querySelectorAll('.r').forEach(el=>ro.observe(el));
+const TIMELINE = [
+  {ago:'2m',  tx:'<b>Buno</b> published Etsy listing "Sunset Print" — live'},
+  {ago:'7m',  tx:'<b>Finn</b> delivered gig #4468 — buyer tipped $6.00'},
+  {ago:'11m', tx:'<b>Maverick</b> spun up experiment: ad-hook A/B'},
+  {ago:'19m', tx:'<b>Dennis</b> finished niche report → sent for review'},
+  {ago:'26m', tx:'<b>Phun</b> BLOCKED — OAuth not configured'},
+  {ago:'41m', tx:'<b>Luke</b> scheduled 4 TikToks for the week'},
+  {ago:'58m', tx:'<b>Matt</b> ran daily standup — 7 agents polled'},
+];
 
-  // ── BEFORE/AFTER SLIDER ──
-  const baSlider = document.getElementById('ba');
-  const baAfter = document.getElementById('ba-after');
-  const baHandle = document.getElementById('ba-handle');
-  let baDown = false;
-  function baDrag(clientX) {
-    const rect = baSlider.getBoundingClientRect();
-    const pct = Math.max(5, Math.min(95, ((clientX - rect.left) / rect.width) * 100));
-    baAfter.style.width = pct + '%';
-    baHandle.style.left = pct + '%';
-  }
-  baHandle.addEventListener('mousedown', e => { baDown=true; e.preventDefault(); });
-  baSlider.addEventListener('mousedown', e => { baDown=true; baDrag(e.clientX); });
-  document.addEventListener('mouseup', ()=>baDown=false);
-  document.addEventListener('mousemove', e=>{ if(baDown) baDrag(e.clientX); });
-  baHandle.addEventListener('touchstart', e=>{baDown=true;e.preventDefault();},{passive:false});
-  document.addEventListener('touchend', ()=>baDown=false);
-  document.addEventListener('touchmove', e=>{if(baDown){baDrag(e.touches[0].clientX);}});
+/* ══════════════════ STATE ══════════════════ */
+const ST = {tab:'focus', sel:null,
+  revenue:2215.98, spend:31.88, tasksDone:76, tasksToday:4, blocked:1};
 
-  // ── HORIZONTAL GALLERY DRAG ──
-  const htrack = document.getElementById('hgal-track');
-  let hDown=false, hStartX, hScroll;
-  htrack.addEventListener('mousedown', e=>{hDown=true;hStartX=e.pageX-htrack.offsetLeft;hScroll=htrack.scrollLeft;htrack.classList.add('dragging');});
-  document.addEventListener('mouseup', ()=>{hDown=false;htrack.classList.remove('dragging');});
-  htrack.addEventListener('mousemove', e=>{if(!hDown)return;const x=e.pageX-htrack.offsetLeft;htrack.scrollLeft=hScroll-(x-hStartX)*1.4;});
-  htrack.addEventListener('touchstart', e=>{hStartX=e.touches[0].pageX;hScroll=htrack.scrollLeft;});
-  htrack.addEventListener('touchmove', e=>{const x=e.touches[0].pageX;htrack.scrollLeft=hScroll-(x-hStartX)*1.2;});
+/* ══════════════════ HELPERS ══════════════════ */
+const $ = s => document.querySelector(s);
+const el = (t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+const money = n => '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const STLABEL = {idle:'idle',working:'working',blocked:'blocked',auto:'autonomous'};
 
-  // ── REVIEWS ──
-  const revs = [
-    {text:'„Absolut begeistert. Die Blumenarrangements für unsere Hochzeit waren traumhaft schön. Jedes Detail wurde mit so viel Liebe gestaltet — wir hätten uns nichts Schöneres vorstellen können."', name:'Ru Ar', init:'RA'},
-    {text:'„Exceptional quality and service. The flower arrangements exceeded all our expectations — a truly talented florist who understands exactly what you need. Highly recommended!"', name:'Daniel Gammie', init:'DG'},
-    {text:'„Wunderbare Arbeit. Die Tischdekorationen für unsere Familienfeier waren ein echter Hingucker — sehr freundlich, professionell und zu einem fairen Preis. Ich komme sehr gerne wieder!"', name:'Susanne Wayman', init:'SW'},
+/* ══════════════════ TOP KPIs ══════════════════ */
+function renderKPIs(){
+  const online = AGENTS.filter(a=>a.status!=='idle').length;
+  const data = [
+    {l:'Total Revenue', v:money(ST.revenue), d:'all sources', cls:'rev'},
+    {l:'Spend · Today',  v:money(ST.spend), d:'OpenRouter + APIs', cls:'spend'},
+    {l:'Tasks Done',     v:ST.tasksDone, d:ST.tasksToday+' created today', cls:'tasks'},
+    {l:'Blocked',        v:ST.blocked, d:'need your action', cls:'blk'},
+    {l:'Agents Active',  v:online+'/'+AGENTS.length, d:'firing now', cls:'act'},
   ];
-  let ri=0;
-  function changeRev(d){
-    ri=(ri+d+3)%3;
-    const rt=document.getElementById('rev-text');
-    rt.style.opacity='0'; rt.style.transform='translateY(10px)';
-    setTimeout(()=>{ rt.textContent=revs[ri].text; document.getElementById('rev-name').textContent=revs[ri].name; document.getElementById('rev-av').textContent=revs[ri].init; rt.style.transition='opacity 0.4s,transform 0.4s'; rt.style.opacity='1'; rt.style.transform='none'; },220);
-  }
-  setInterval(()=>changeRev(1), 6500);
+  $('#kpis').innerHTML='';
+  data.forEach(k=>{
+    const d=el('div','kpi');
+    d.innerHTML=`<div class="l">${k.l}</div><div class="v ${k.cls}">${k.v}</div><div class="d">${k.d}</div>`;
+    $('#kpis').append(d);
+  });
+}
 
-  // ── MODALS ──
-  function openPhone(){document.getElementById('phone-modal').classList.add('open');document.body.style.overflow='hidden';}
-  function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
-  function copyNum(){navigator.clipboard.writeText('017685911586').then(()=>{const b=document.getElementById('copy-btn');b.textContent='✓ Kopiert!';b.classList.add('ok');setTimeout(()=>{b.textContent='Nummer kopieren';b.classList.remove('ok');},2500);});}
-  function openService(occ){document.getElementById('sm-label').textContent=occ;document.getElementById('sm-title').textContent=occ+' – Anfrage stellen';document.getElementById('sm-occasion').value=occ;['sm-name','sm-phone','sm-msg'].forEach(id=>document.getElementById(id).value='');document.getElementById('sm-date').value='';document.getElementById('srv-modal').classList.add('open');document.body.style.overflow='hidden';}
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal('phone-modal');closeModal('srv-modal');closeMenu();}});
+/* ══════════════════ CREW ══════════════════ */
+function renderCrew(){
+  const list=$('#crewList');list.innerHTML='';
+  AGENTS.forEach(a=>{
+    const row=el('div','agent'+(ST.sel===a.id?' sel':''));
+    row.onclick=()=>{ST.sel=(ST.sel===a.id?null:a.id);renderCrew();if(ST.tab!=='focus'){ST.tab='focus';renderTabs();}renderView();};
+    const meta = a.status==='blocked' ? 'action req' :
+                 a.mode==='scheduled' ? 'cycle '+a.cycle+'s' :
+                 a.mode==='auto' ? 'autonomous' : 'event-driven';
+    row.innerHTML=`
+      <span class="dot ${a.status}"></span>
+      <div style="min-width:0">
+        <div class="a-name">${a.name}</div>
+        <div class="a-role">${a.role}</div>
+      </div>
+      <div class="a-meta"><div class="st ${a.status}">${STLABEL[a.status]}</div><div>${meta}</div></div>`;
+    list.append(row);
+  });
+  $('#crewCount').textContent = AGENTS.filter(a=>a.status!=='idle').length;
+}
 
-  // ── FORMS → LOCALSTORAGE ──
-  function saveInquiry(data){const list=JSON.parse(localStorage.getItem('mf_inquiries')||'[]');list.unshift({id:Date.now().toString(),...data,timestamp:new Date().toISOString(),read:false,status:'new'});localStorage.setItem('mf_inquiries',JSON.stringify(list));}
-  function submitContact(e){
-    e.preventDefault();
-    saveInquiry({name:document.getElementById('cf-name').value,phone:document.getElementById('cf-phone').value,occasion:document.getElementById('cf-occasion').value,date:'',message:document.getElementById('cf-msg').value,source:'contact-form'});
-    const b=document.getElementById('cf-btn');b.textContent='✓ Danke — wir melden uns!';b.style.background='#3a7c54';e.target.reset();
-    setTimeout(()=>{b.textContent='Absenden';b.style.background='';},4000);
+/* ══════════════════ TABS ══════════════════ */
+const TABS=[
+  {id:'focus',    label:'Focus'},
+  {id:'tasks',    label:'Tasks', badge:()=>TASKS.length},
+  {id:'decisions',label:'Decisions', badge:()=>DECISIONS.length},
+  {id:'timeline', label:'Timeline'},
+  {id:'factory',  label:'Factory'},
+  {id:'revenue',  label:'Revenue Bay'},
+  {id:'treasury', label:'Treasury'},
+  {id:'starchart',label:'Star Chart'},
+];
+function renderTabs(){
+  const nav=$('#tabs');nav.innerHTML='';
+  TABS.forEach(t=>{
+    const b=el('button','tab'+(ST.tab===t.id?' on':''));
+    b.innerHTML=t.label+(t.badge?` <span class="badge">${t.badge()}</span>`:'');
+    b.onclick=()=>{ST.tab=t.id;renderTabs();renderView();};
+    nav.append(b);
+  });
+}
+
+/* ══════════════════ VIEWS ══════════════════ */
+function pill(st){
+  const map={run:['run','running'],done:['done','done'],review:['review','review'],
+             block:['block','blocked'],queue:['queue','queued']};
+  const [c,l]=map[st]||['queue',st];return `<span class="pill ${c}">${l}</span>`;
+}
+function taskRows(list){
+  if(!list.length) return `<div class="empty">no tasks in this room yet</div>`;
+  return `<div class="feed">`+list.map(t=>`
+    <div class="task">
+      <div class="who">${t.who}</div>
+      <div class="desc">${t.t}<div class="sub">${t.sub||''}</div></div>
+      ${pill(t.st)}
+    </div>`).join('')+`</div>`;
+}
+
+function viewFocus(){
+  const selAgent = ST.sel ? AGENTS.find(a=>a.id===ST.sel) : null;
+  const scope = selAgent ? TASKS.filter(t=>t.who===selAgent.name) : TASKS;
+  const alert = BLOCKERS.length ? `
+    <div class="alert">
+      <div class="hd">⚠ Agents blocked on your action</div>
+      ${BLOCKERS.map(b=>`<div class="row"><b>${b.who}:</b> ${b.txt} · ${b.need}</div>`).join('')}
+    </div>` : '';
+  const summary = `
+    <div class="summary">
+      <span>Today: <b>${ST.tasksToday}</b> tasks created</span>
+      <span><span class="chip a">${money(0.09)}</span> queue spend</span>
+      <span><span class="chip g">${ST.tasksDone}</span> done</span>
+      <span><span class="chip r">${ST.blocked}</span> blocked</span>
+      <span><span class="chip c">${AGENTS.filter(a=>a.status!=='idle').length}</span> firing now</span>
+    </div>`;
+  const title = selAgent ? selAgent.name+' — '+selAgent.role : 'OPS CONSOLE — Command Center';
+  const sub = selAgent
+    ? `filtered to ${selAgent.name} · ${selAgent.note} · click again to clear`
+    : 'live view · auto-refreshes every 5s · same data as Command, filtered for this room';
+  return `
+    <div class="view-hd"><h1>${title}</h1><div class="sub">${sub}</div></div>
+    ${selAgent?'':alert}
+    ${summary}
+    <div class="panel">
+      <div class="panel-hd"><span>${selAgent?selAgent.name+"'s queue":'Live task feed'}</span><span style="color:var(--faint)">${scope.length} items</span></div>
+      <div class="panel-bd" style="padding:0">${taskRows(scope)}</div>
+    </div>`;
+}
+
+function viewTasks(){
+  const groups=[['run','Running'],['review','Awaiting Review'],['queue','Queued'],['done','Completed'],['block','Blocked']];
+  return `<div class="view-hd"><h1>TASKS</h1><div class="sub">${TASKS.length} tasks across all agents · grouped by state</div></div>`+
+    groups.map(([k,label])=>{
+      const rows=TASKS.filter(t=>t.st===k);if(!rows.length)return '';
+      return `<div class="panel"><div class="panel-hd"><span>${label}</span><span style="color:var(--faint)">${rows.length}</span></div><div class="panel-bd" style="padding:0">${taskRows(rows)}</div></div>`;
+    }).join('');
+}
+
+function viewDecisions(){
+  return `<div class="view-hd"><h1>DECISIONS</h1><div class="sub">${DECISIONS.length} agents waiting on a judgment call · your approval fires their next action</div></div>`+
+    (DECISIONS.length?DECISIONS.map((d,i)=>`
+      <div class="decision" data-i="${i}">
+        <div class="who">${d.who} asks</div>
+        <div class="q">${d.q}</div>
+        <div class="acts">
+          <button class="btn y" onclick="resolveDecision(${i},true)">Approve</button>
+          <button class="btn n" onclick="resolveDecision(${i},false)">Reject</button>
+          <button class="btn" onclick="resolveDecision(${i},null)">Defer</button>
+        </div>
+      </div>`).join(''):`<div class="empty">✓ no decisions pending — agents are running clear</div>`);
+}
+function resolveDecision(i,val){
+  const d=DECISIONS[i];if(!d)return;
+  const verb = val===true?'approved':val===false?'rejected':'deferred';
+  TIMELINE.unshift({ago:'now', tx:`<b>You</b> ${verb} — ${d.who}: ${d.q.slice(0,42)}…`});
+  DECISIONS.splice(i,1);renderTabs();renderView();
+}
+
+function viewTimeline(){
+  return `<div class="view-hd"><h1>TIMELINE</h1><div class="sub">chronological event log · every agent action, newest first</div></div>
+    <div class="panel"><div class="panel-bd"><div class="tl">`+
+    TIMELINE.map(e=>`<div class="ev"><div class="ts">${e.ago==='now'?'JUST NOW':e.ago+' ago'}</div><div class="tx">${e.tx}</div></div>`).join('')+
+    `</div></div></div>`;
+}
+
+function viewFactory(){
+  const cols=[
+    {k:'run',   label:'In Progress', cls:'c'},
+    {k:'review',label:'Approvals',   cls:'a'},
+    {k:'done',  label:'Delivered',   cls:'g'},
+    {k:'block', label:'Blocked',     cls:'r'},
+  ];
+  return `<div class="view-hd"><h1>FACTORY</h1><div class="sub">task pipeline · executor agents · auto-refresh 6s</div></div>
+    <div class="board">`+cols.map(c=>{
+      const cards=TASKS.filter(t=>t.st===c.k);
+      return `<div class="col"><div class="col-hd"><span>${c.label}</span><span class="n">${cards.length}</span></div>`+
+        (cards.length?cards.map(t=>`<div class="card ${c.cls}"><div class="who">${t.who}</div><div class="t">${t.t}</div></div>`).join(''):`<div class="empty" style="padding:20px">—</div>`)+
+        `</div>`;
+    }).join('')+`</div>`;
+}
+
+function viewRevenue(){
+  const total=REVENUE.reduce((s,r)=>s+r.amt,0);
+  const max=Math.max(...REVENUE.map(r=>r.amt));
+  return `<div class="view-hd"><h1>REVENUE BAY</h1><div class="sub">all income streams in one place · auto-refresh 30s</div></div>
+    <div class="stat-row">
+      <div class="stat"><div class="l">Gross Total</div><div class="v" style="color:var(--green)">${money(ST.revenue)}</div></div>
+      <div class="stat"><div class="l">Stripe (paid out)</div><div class="v" style="color:var(--cyan)">${money(891.68)}</div></div>
+      <div class="stat"><div class="l">Agent-Attributed</div><div class="v" style="color:var(--mag)">${money(total)}</div></div>
+      <div class="stat"><div class="l">30-day Trend</div><div class="v" style="color:var(--green)">▲ 18%</div></div>
+    </div>
+    <div class="panel"><div class="panel-hd"><span>Revenue by source</span><span style="color:var(--faint)">what the agents earned</span></div>
+      <div class="panel-bd">`+
+      REVENUE.map(r=>`<div class="bar-row"><div class="nm">${r.src}</div><div class="track"><div class="fill ${r.c}" style="width:${(r.amt/max*100).toFixed(0)}%"></div></div><div class="amt" style="color:var(--green)">${money(r.amt)}</div></div>`).join('')+
+      `</div></div>`;
+}
+
+function viewTreasury(){
+  const total=SPEND.reduce((s,r)=>s+r.amt,0);
+  const max=Math.max(...SPEND.map(r=>r.amt))||1;
+  return `<div class="view-hd"><h1>TREASURY</h1><div class="sub">OpenRouter spend · per-agent costs · per-task spend · auto-refresh 60s</div></div>
+    <div class="stat-row">
+      <div class="stat"><div class="l">Total Spent</div><div class="v" style="color:var(--amber)">${money(ST.spend)}</div></div>
+      <div class="stat"><div class="l">Remaining Budget</div><div class="v" style="color:var(--green)">${money(68.12)}</div></div>
+      <div class="stat"><div class="l">Cost / Task</div><div class="v" style="color:var(--cyan)">${money(ST.spend/Math.max(ST.tasksDone,1))}</div></div>
+      <div class="stat"><div class="l">Net Margin</div><div class="v" style="color:var(--green)">${money(ST.revenue-ST.spend)}</div></div>
+    </div>
+    <div class="panel"><div class="panel-hd"><span>Per-agent cost</span><span style="color:var(--faint)">OpenRouter LLM · image · video</span></div>
+      <div class="panel-bd">`+
+      SPEND.map(r=>`<div class="bar-row"><div class="nm">${r.src}</div><div class="track"><div class="fill a" style="width:${(r.amt/max*100).toFixed(0)}%"></div></div><div class="amt" style="color:var(--amber)">${money(r.amt)}</div></div>`).join('')+
+      `</div></div>`;
+}
+
+function viewStar(){
+  return `<div class="view-hd"><h1>STAR CHART</h1><div class="sub">agent constellation · orbit = activity level · click a star to focus that agent</div></div>
+    <div id="starwrap"><canvas id="stars"></canvas></div>
+    <div class="legend">
+      <span><span class="ld" style="background:var(--green);box-shadow:var(--glow-green)"></span>working</span>
+      <span><span class="ld" style="background:var(--cyan);box-shadow:var(--glow-cyan)"></span>autonomous</span>
+      <span><span class="ld" style="background:var(--red)"></span>blocked</span>
+      <span><span class="ld" style="background:var(--dim)"></span>idle</span>
+    </div>`;
+}
+
+const VIEWS={focus:viewFocus,tasks:viewTasks,decisions:viewDecisions,timeline:viewTimeline,
+  factory:viewFactory,revenue:viewRevenue,treasury:viewTreasury,starchart:viewStar};
+
+function renderView(){
+  $('#view').innerHTML = (VIEWS[ST.tab]||viewFocus)();
+  if(ST.tab==='starchart') startStars();
+  else stopStars();
+}
+
+/* ══════════════════ STAR CHART (canvas) ══════════════════ */
+let starRAF=null;
+const STAR_COLOR={working:'#39ff8b',auto:'#22d3ee',blocked:'#ff4d5e',idle:'#8a7fb0'};
+function startStars(){
+  const cv=$('#stars');if(!cv)return;
+  const ctx=cv.getContext('2d');
+  function resize(){const w=cv.parentElement.clientWidth;cv.width=w;cv.height=Math.max(340,w*0.42);}
+  resize();window.onresize=()=>{if($('#stars')){resize();}};
+  const cx=()=>cv.width/2, cy=()=>cv.height/2;
+  const bodies=AGENTS.map((a,i)=>({a,
+    r:70+i*((Math.min(cv.width,cv.height)*0.42-70)/AGENTS.length),
+    ang:Math.random()*Math.PI*2,
+    spd:(a.status==='idle'?0.0015:a.status==='working'?0.006:a.status==='auto'?0.009:0.003)*(i%2?1:-1),
+    size:a.status==='idle'?3:5}));
+  let t=0;
+  function frame(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    // core sun
+    const cxx=cx(),cyy=cy();
+    const g=ctx.createRadialGradient(cxx,cyy,0,cxx,cyy,46);
+    g.addColorStop(0,'rgba(255,79,216,.9)');g.addColorStop(.4,'rgba(168,85,247,.5)');g.addColorStop(1,'transparent');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(cxx,cyy,46,0,7);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='700 11px JetBrains Mono';ctx.textAlign='center';
+    ctx.fillText('CORE',cxx,cyy+4);
+    bodies.forEach(b=>{
+      // orbit
+      ctx.strokeStyle='rgba(168,85,247,.14)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.arc(cxx,cyy,b.r,0,7);ctx.stroke();
+      b.ang+=b.spd;
+      const x=cxx+Math.cos(b.ang)*b.r, y=cyy+Math.sin(b.ang)*b.r;
+      const col=STAR_COLOR[b.a.status];
+      const pulse=b.a.status==='idle'?1:1+Math.sin(t*0.06+b.r)*0.25;
+      // glow
+      const gg=ctx.createRadialGradient(x,y,0,x,y,16*pulse);
+      gg.addColorStop(0,col);gg.addColorStop(1,'transparent');
+      ctx.fillStyle=gg;ctx.globalAlpha=.55;ctx.beginPath();ctx.arc(x,y,16*pulse,0,7);ctx.fill();ctx.globalAlpha=1;
+      ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,b.size,0,7);ctx.fill();
+      ctx.fillStyle=ST.sel===b.a.id?'#fff':'rgba(231,222,251,.8)';
+      ctx.font=(ST.sel===b.a.id?'700 ':'')+'10px JetBrains Mono';ctx.textAlign='center';
+      ctx.fillText(b.a.name,x,y-12);
+      b._x=x;b._y=y;
+    });
+    t++;starRAF=requestAnimationFrame(frame);
   }
-  function submitService(e){
-    e.preventDefault();
-    saveInquiry({name:document.getElementById('sm-name').value,phone:document.getElementById('sm-phone').value,occasion:document.getElementById('sm-occasion').value,date:document.getElementById('sm-date').value,message:document.getElementById('sm-msg').value,source:'service-card'});
-    const b=document.getElementById('sm-btn');b.textContent='✓ Gesendet!';b.style.background='#3a7c54';
-    setTimeout(()=>{closeModal('srv-modal');b.textContent='Anfrage senden';b.style.background='';},2000);
+  cv.onclick=(e)=>{
+    const rect=cv.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(cv.width/rect.width), my=(e.clientY-rect.top)*(cv.height/rect.height);
+    let hit=null;bodies.forEach(b=>{if(Math.hypot(mx-b._x,my-b._y)<16)hit=b.a.id;});
+    if(hit){ST.sel=hit;renderCrew();ST.tab='focus';renderTabs();renderView();}
+  };
+  cancelAnimationFrame(starRAF);frame();
+}
+function stopStars(){if(starRAF){cancelAnimationFrame(starRAF);starRAF=null;}window.onresize=null;}
+
+/* ══════════════════ LIVE SIMULATION ══════════════════ */
+function tick(){
+  // clock
+  const d=new Date();
+  $('#clock').textContent=d.toISOString().slice(11,19);
+  // drift revenue & spend a touch to feel alive
+  if(Math.random()<0.35){
+    ST.revenue += +(Math.random()*4.5).toFixed(2);
+    ST.spend   += +(Math.random()*0.12).toFixed(2);
+    renderKPIs();
+    if(ST.tab==='revenue'||ST.tab==='treasury')renderView();
   }
+}
+function cycleAgents(){
+  // occasionally flip a non-blocked agent's status to simulate event firing
+  const pool=AGENTS.filter(a=>a.status!=='blocked');
+  const a=pool[Math.floor(Math.random()*pool.length)];
+  if(!a)return;
+  if(a.status==='working'){a.status=(a.mode==='auto'?'auto':'idle');}
+  else if(a.status==='idle'){a.status='working';ST.tasksDone++;ST.tasksToday++;
+    TIMELINE.unshift({ago:'now',tx:`<b>${a.name}</b> fired — new task in ${a.role}`});
+    if(TIMELINE.length>14)TIMELINE.pop();}
+  renderCrew();renderKPIs();renderTicker();
+  if(ST.tab==='focus'||ST.tab==='timeline')renderView();
+  if(ST.tab==='starchart'){/* stars read status live via bodies rebuild */startStars();}
+}
+
+/* ══════════════════ TICKER ══════════════════ */
+function renderTicker(){
+  const items = TIMELINE.map(e=>e.tx.replace(/<b>/g,'<b>').replace(/<\/b>/g,'</b>'));
+  const line = items.map(t=>`<span>${t}</span>`).join('<span class="sep">◆</span>');
+  $('#ticker').innerHTML = line + '<span class="sep">◆</span>' + line;
+}
+
+/* ══════════════════ BOOT SEQUENCE ══════════════════ */
+function boot(){
+  const log=$('#bootlog');
+  const lines=[
+    ['booting mission control kernel …','ok'],
+    [`linking ${AGENTS.length} autonomous agents …`,'cy'],
+    ['◦ '+AGENTS.map(a=>a.name).join('  ◦ '),'mg'],
+    ['mounting revenue bay + treasury …','ok'],
+    ['opening OpenRouter spend channel …','ok'],
+    ['calibrating star chart orbits …','cy'],
+    [`${BLOCKERS.length} agent(s) blocked · awaiting operator`,'mg'],
+    ['ALL SYSTEMS ONLINE — welcome, operator','ok'],
+  ];
+  let i=0;
+  (function next(){
+    if(i>=lines.length){
+      setTimeout(()=>{$('#boot').classList.add('gone');},600);
+      return;
+    }
+    const [txt,cls]=lines[i++];
+    const row=document.createElement('div');
+    row.innerHTML=`<span class="${cls}">▸</span> ${txt} <span class="ok">✓</span>`;
+    log.append(row);
+    setTimeout(next, 260+Math.random()*180);
+  })();
+}
+
+/* ══════════════════ BOOT ══════════════════ */
+renderKPIs();renderCrew();renderTabs();renderView();renderTicker();
+boot();
+setInterval(tick,1000);
+setInterval(cycleAgents,4200);
 </script>
 </body>
 </html>
